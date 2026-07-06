@@ -2897,4 +2897,5 @@ class InteractiveSearchToolbox {
         }
 }
 
-export default InteractiveSearchToolbox;
+window.InteractiveSearchToolbox = InteractiveSearchToolbox;
+//export default InteractiveSearchToolbox;
