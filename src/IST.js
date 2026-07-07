@@ -598,7 +598,7 @@ class InteractiveSearchToolbox {
         window.THREE = THREE
         window.jsPsych = initJsPsych({
             on_trial_start: function (trial) {
-                this.jsPsychRunning = truel
+                this.jsPsychRunning = true;
             }
         });
 
