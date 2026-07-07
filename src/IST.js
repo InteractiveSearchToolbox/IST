@@ -1,4 +1,5 @@
 import 'jspsych/css/jspsych.css'
+import './style.css'
 import { initJsPsych } from "jspsych"
 import instructions from "@jspsych/plugin-instructions"
 import canvasKeyboardResponse from "@jspsych/plugin-canvas-keyboard-response"
@@ -200,7 +201,7 @@ class InteractiveSearchToolbox {
         this.preloadingManager = new THREE.LoadingManager();
 
         this.preloadingManager.onLoad = () => {
-            
+
             this.preloadedGLBsDone = true;
 
             if (this._preloadFinishedCallback != null) {
@@ -289,6 +290,7 @@ class InteractiveSearchToolbox {
         this.currentMaskType = null
         this.currentControls = null
         this.isOrbiting = false
+        this.isPivoting = false
 
 
         this.maskControls;
@@ -297,7 +299,7 @@ class InteractiveSearchToolbox {
 
         this.objectsInScene = []
 
-        this.shouldCollectData = true
+        this.shouldCollectData = false
         this.realTimeTracking = false
         this.currentTrialIndex = 0;
         this.currentSceneInfo = [];
@@ -340,7 +342,7 @@ class InteractiveSearchToolbox {
         this._preloadFinishedCallback = callback;
     }
 
-    
+
 
     onLoadingManagerLoad() {
         // Users do not touch this one.
@@ -531,7 +533,7 @@ class InteractiveSearchToolbox {
                 return;
             }
 
-            
+
         });
 
         // When button released
@@ -588,11 +590,18 @@ class InteractiveSearchToolbox {
         });
 
         // Preload in default HDRI
-        //this.preloadDefaultHDRI('https://cdn.jsdelivr.net/gh/HadenDewis/InteractiveSearchToolbox@latest/toolbox_assets/smallStudio.hdr')
+        this.preloadDefaultHDRI('https://cdn.jsdelivr.net/gh/HadenDewis/InteractiveSearchToolbox@latest/toolbox_assets/smallStudio.hdr')
+
+        this.jsPsychRunning = false
 
         // Attach other libraries as global objects 
         window.THREE = THREE
-        window.jsPsych = initJsPsych();
+        window.jsPsych = initJsPsych({
+            on_trial_start: function (trial) {
+                this.jsPsychRunning = truel
+            }
+        });
+
         window.canvasKeyboardResponse = canvasKeyboardResponse
         window.canvasButtonResponse = canvasButtonResponse
         window.htmlKeyboardResponse = htmlKeyboardResponse
@@ -654,6 +663,7 @@ class InteractiveSearchToolbox {
         }
 
         this.FPControlsEnabled = true;
+        this.currentControls = 'FP'
     }
 
     disableFirstPersonControls() {
@@ -772,11 +782,14 @@ class InteractiveSearchToolbox {
 
     firstPersonControls(event) {
         if (this.pointerDown) {
+            this.isPivoting = true
             this.camera.rotateOnWorldAxis(yAxis, this.pointerDelta.x * this.firstPersonMouseSensitivity);
             this.camera.rotateOnAxis(xAxis, this.pointerDelta.y * this.firstPersonMouseSensitivity);
 
             xAxis.set(1, 0, 0) // Reset to default
             yAxis.set(0, 1, 0) // Reset to default
+        } else {
+            this.isPivoting = false
         }
     }
 
@@ -892,7 +905,7 @@ class InteractiveSearchToolbox {
             top: 0;
             width: 24px;
             height: 24px;
-            background: rgba(255, 255, 255, 0.85);
+            background: #ffffffd9;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
             animation: animloader2 2s ease infinite;
             }
@@ -955,6 +968,7 @@ class InteractiveSearchToolbox {
         this.loadingScreen.appendChild(loadingText);
         this.loadingScreen.appendChild(loader);
         document.body.appendChild(this.loadingScreen);
+        this.loadingScreen.style.display = 'none';
     }
 
     // BUG: Need to fix jitter - map it between 0 and 1 and make it work better with scaling issues.
@@ -1520,17 +1534,28 @@ class InteractiveSearchToolbox {
         );
     }
 
-    preloadHDRI(pathToHDRI) {
-        const hdrEquirectangularMap = new RGBELoader(this.preloadingManager);
+    preloadHDRI(pathToHDRI, applyHDRI = false) {
+        const hdrEquirectangularMap = new HDRLoader(this.preloadingManager);
 
-        hdrEquirectangularMap.load(pathToHDRI, (texture) => {
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            texture.minFilter = THREE.LinearFilter;
-            texture.magFilter = THREE.LinearFilter;
-            texture.needsUpdate = true;
-            texture.name = pathToHDRI;
-            this.loadedEnvs.push(texture)
-        });
+        for (let i = 0; i < pathToHDRI.length; i++) {
+            const HDRI = pathToHDRI[i]
+
+            hdrEquirectangularMap.load(HDRI, (texture) => {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                texture.needsUpdate = true;
+                texture.name = this.getFileName(HDRI);
+                this.loadedEnvs.push(texture)
+
+                if (applyHDRI) {
+                    this.scene.environment = texture;
+                }
+            });
+
+        }
+
+
     }
 
     preLoadTextures(texturesToLoad) {
@@ -1662,7 +1687,7 @@ class InteractiveSearchToolbox {
 
     }
 
-    trialCleanup() {
+    endTrial() {
 
         this.stopAnimationLoop()
 
@@ -1678,12 +1703,13 @@ class InteractiveSearchToolbox {
 
         this.currentTrialIndex++;
 
-        this.getCurrentTrialData_JSPsych().IST_TRIAL_INDEX = this.currentTrialIndex
+        if (this.jsPsychRunning) {
+            this.getCurrentTrialData_JSPsych().IST_TRIAL_INDEX = this.currentTrialIndex
 
-        const jspsychData = this.getBehaviouralData()
-        this.addGlobalData("JS_PSYCH_DATA", jspsychData, { stringify: false })
+            const jspsychData = this.getBehaviouralData()
+            this.addGlobalData("JS_PSYCH_DATA", jspsychData, { stringify: false })
+        }
 
-        console.log(this.getData())
     }
 
     getCurrentTrialData_JSPsych() {
@@ -1722,7 +1748,7 @@ class InteractiveSearchToolbox {
 
         this._updateCallback?.();
         //this.update() // Process loop - user can put their own code here
-        
+
         this.delta = this.timer.getDelta();
         this.experimentClock.tick()
 
@@ -1789,31 +1815,51 @@ class InteractiveSearchToolbox {
         //this.getCurrentTrialData_JSPsych()[name].push(data)
     }
 
-    collectOrbitControlsData(){
+    collectOrbitControlsData() {
         if (this.isOrbiting) {
-                this.singleTrialInteractionData['INTERACTION_TIME'].push(this.currentFrameTime)
-                this.singleTrialInteractionData['CURRENT_OBJECT'].push(this.camera.name)
+            this.singleTrialInteractionData['INTERACTION_TIME'].push(this.currentFrameTime)
+            this.singleTrialInteractionData['CURRENT_OBJECT'].push(this.camera.name)
 
-                this.singleTrialInteractionData['X_POS'].push(this.camera.position.x)
-                this.singleTrialInteractionData['Y_POS'].push(this.camera.position.y)
-                this.singleTrialInteractionData['Z_POS'].push(this.camera.position.z)
+            this.singleTrialInteractionData['X_POS'].push(this.camera.position.x)
+            this.singleTrialInteractionData['Y_POS'].push(this.camera.position.y)
+            this.singleTrialInteractionData['Z_POS'].push(this.camera.position.z)
 
-                this.singleTrialInteractionData['X_ROT'].push(this.camera.quaternion.x)
-                this.singleTrialInteractionData['Y_ROT'].push(this.camera.quaternion.y)
-                this.singleTrialInteractionData['Z_ROT'].push(this.camera.quaternion.z)
-                this.singleTrialInteractionData['W_ROT'].push(this.camera.quaternion.w)
+            this.singleTrialInteractionData['X_ROT'].push(this.camera.quaternion.x)
+            this.singleTrialInteractionData['Y_ROT'].push(this.camera.quaternion.y)
+            this.singleTrialInteractionData['Z_ROT'].push(this.camera.quaternion.z)
+            this.singleTrialInteractionData['W_ROT'].push(this.camera.quaternion.w)
 
-                this.singleTrialInteractionData['MOUSE_X_POS'].push(this.mouseX)
-                this.singleTrialInteractionData['MOUSE_Y_POS'].push(this.mouseY)
-            }
+            this.singleTrialInteractionData['MOUSE_X_POS'].push(this.mouseX)
+            this.singleTrialInteractionData['MOUSE_Y_POS'].push(this.mouseY)
+        }
     }
-    collectMaskControlsData(){
+
+    collectFirstPersonControlsData() {
+        if (this.isPivoting) {
+            this.singleTrialInteractionData['INTERACTION_TIME'].push(this.currentFrameTime)
+            this.singleTrialInteractionData['CURRENT_OBJECT'].push(this.camera.name)
+
+            this.singleTrialInteractionData['X_POS'].push(this.camera.position.x)
+            this.singleTrialInteractionData['Y_POS'].push(this.camera.position.y)
+            this.singleTrialInteractionData['Z_POS'].push(this.camera.position.z)
+
+            this.singleTrialInteractionData['X_ROT'].push(this.camera.quaternion.x)
+            this.singleTrialInteractionData['Y_ROT'].push(this.camera.quaternion.y)
+            this.singleTrialInteractionData['Z_ROT'].push(this.camera.quaternion.z)
+            this.singleTrialInteractionData['W_ROT'].push(this.camera.quaternion.w)
+
+            this.singleTrialInteractionData['MOUSE_X_POS'].push(this.mouseX)
+            this.singleTrialInteractionData['MOUSE_Y_POS'].push(this.mouseY)
+        }
+    }
+
+    collectMaskControlsData() {
 
         this.singleTrialInteractionData['MOUSE_X_POS'].push(this.mouseX)
         this.singleTrialInteractionData['MOUSE_Y_POS'].push(this.mouseY)
 
         if (this.currentRaycastObject) {
-            if(this.currentRaycastObject.length > 0){
+            if (this.currentRaycastObject.length > 0) {
                 this.singleTrialInteractionData['INTERACTION_TIME'].push(this.currentFrameTime)
                 this.singleTrialInteractionData['CURRENT_OBJECT'].push(this.currentRaycastObject.name)
 
@@ -1826,44 +1872,44 @@ class InteractiveSearchToolbox {
                 this.singleTrialInteractionData['Z_ROT'].push(this.currentRaycastObject.quaternion.z)
                 this.singleTrialInteractionData['W_ROT'].push(this.currentRaycastObject.quaternion.w)
             }
-            }
+        }
     }
-    collectDragControlsData(){
+    collectDragControlsData() {
         if (this.selectedObject != null) {
-                this.singleTrialInteractionData['INTERACTION_TIME'].push(this.currentFrameTime)
-                this.singleTrialInteractionData['CURRENT_OBJECT'].push(this.selectedObject.name)
+            this.singleTrialInteractionData['INTERACTION_TIME'].push(this.currentFrameTime)
+            this.singleTrialInteractionData['CURRENT_OBJECT'].push(this.selectedObject.name)
 
-                this.singleTrialInteractionData['X_POS'].push(this.selectedObject.position.x)
-                this.singleTrialInteractionData['Y_POS'].push(this.selectedObject.position.y)
-                this.singleTrialInteractionData['Z_POS'].push(this.selectedObject.position.z)
+            this.singleTrialInteractionData['X_POS'].push(this.selectedObject.position.x)
+            this.singleTrialInteractionData['Y_POS'].push(this.selectedObject.position.y)
+            this.singleTrialInteractionData['Z_POS'].push(this.selectedObject.position.z)
 
-                this.singleTrialInteractionData['X_ROT'].push(this.selectedObject.quaternion.x)
-                this.singleTrialInteractionData['Y_ROT'].push(this.selectedObject.quaternion.y)
-                this.singleTrialInteractionData['Z_ROT'].push(this.selectedObject.quaternion.z)
-                this.singleTrialInteractionData['W_ROT'].push(this.selectedObject.quaternion.w)
+            this.singleTrialInteractionData['X_ROT'].push(this.selectedObject.quaternion.x)
+            this.singleTrialInteractionData['Y_ROT'].push(this.selectedObject.quaternion.y)
+            this.singleTrialInteractionData['Z_ROT'].push(this.selectedObject.quaternion.z)
+            this.singleTrialInteractionData['W_ROT'].push(this.selectedObject.quaternion.w)
 
-                this.singleTrialInteractionData['MOUSE_X_POS'].push(this.mouseX)
-                this.singleTrialInteractionData['MOUSE_Y_POS'].push(this.mouseY)
-            }
+            this.singleTrialInteractionData['MOUSE_X_POS'].push(this.mouseX)
+            this.singleTrialInteractionData['MOUSE_Y_POS'].push(this.mouseY)
+        }
     }
-    
-    collectDragToRotateControlsData(){
+
+    collectDragToRotateControlsData() {
         if (this.selectedObject != null) {
-                this.singleTrialInteractionData['INTERACTION_TIME'].push(this.currentFrameTime)
-                this.singleTrialInteractionData['CURRENT_OBJECT'].push(this.selectedObject.name)
+            this.singleTrialInteractionData['INTERACTION_TIME'].push(this.currentFrameTime)
+            this.singleTrialInteractionData['CURRENT_OBJECT'].push(this.selectedObject.name)
 
-                this.singleTrialInteractionData['X_POS'].push(this.selectedObject.position.x)
-                this.singleTrialInteractionData['Y_POS'].push(this.selectedObject.position.y)
-                this.singleTrialInteractionData['Z_POS'].push(this.selectedObject.position.z)
+            this.singleTrialInteractionData['X_POS'].push(this.selectedObject.position.x)
+            this.singleTrialInteractionData['Y_POS'].push(this.selectedObject.position.y)
+            this.singleTrialInteractionData['Z_POS'].push(this.selectedObject.position.z)
 
-                this.singleTrialInteractionData['X_ROT'].push(this.selectedObject.quaternion.x)
-                this.singleTrialInteractionData['Y_ROT'].push(this.selectedObject.quaternion.y)
-                this.singleTrialInteractionData['Z_ROT'].push(this.selectedObject.quaternion.z)
-                this.singleTrialInteractionData['W_ROT'].push(this.selectedObject.quaternion.w)
+            this.singleTrialInteractionData['X_ROT'].push(this.selectedObject.quaternion.x)
+            this.singleTrialInteractionData['Y_ROT'].push(this.selectedObject.quaternion.y)
+            this.singleTrialInteractionData['Z_ROT'].push(this.selectedObject.quaternion.z)
+            this.singleTrialInteractionData['W_ROT'].push(this.selectedObject.quaternion.w)
 
-                this.singleTrialInteractionData['MOUSE_X_POS'].push(this.mouseX)
-                this.singleTrialInteractionData['MOUSE_Y_POS'].push(this.mouseY)
-            }
+            this.singleTrialInteractionData['MOUSE_X_POS'].push(this.mouseX)
+            this.singleTrialInteractionData['MOUSE_Y_POS'].push(this.mouseY)
+        }
     }
 
     collectData() {
@@ -1878,6 +1924,9 @@ class InteractiveSearchToolbox {
                 case 'ORBIT':
                     this.collectOrbitControlsData()
                     break
+                case 'FP':
+                    this.collectFirstPersonControlsData()
+                    break
                 case 'DRAG':
                     this.collectDragControlsData()
                     break
@@ -1888,16 +1937,16 @@ class InteractiveSearchToolbox {
                     this.collectMaskControlsData()
                     break
                 default:
-                    console.log('no controls enabled')
+                    //console.log('no controls enabled')
                     break
             }
-                
+
 
             // If using orbit controls, current object becomes the camera
             // If using drag and drop nothing changes
             // If using mask, change selectedObject to the raycast object since they can never click an object
 
-            
+
         }
     }
 
@@ -2198,32 +2247,32 @@ class InteractiveSearchToolbox {
             for (let i = 0; i < controlSettings.numberOfBlurPasses; i++) {
                 const hBlurPass = new ShaderPass(HorizontalBlurShader);
                 const vBlurPass = new ShaderPass(VerticalBlurShader);
-                
+
                 hBlurPass.uniforms['h'].value = controlSettings.blurIntensity / window.innerWidth;
                 vBlurPass.uniforms['v'].value = controlSettings.blurIntensity / window.innerHeight;
-                
+
                 this.mainComposer.addPass(hBlurPass);
                 this.mainComposer.addPass(vBlurPass);
             }
         }
 
         // Pass that handles the cursor cutout
-        this.finalPass = new ShaderPass(MaskShader); 
-        
+        this.finalPass = new ShaderPass(MaskShader);
+
         // Now pass the unmasked part to the shader
         this.finalPass.uniforms.tSharp.value = this.sharpRT.texture;
-        
+
         // Map string to the integer the shader expects (0 = blur, 1 = opaque, 2 = transparent)
         let typeInt = 0;
         if (controlSettings.maskType.toLowerCase() === 'opaque') typeInt = 1;
-        
+
         this.finalPass.uniforms.maskType.value = typeInt;
 
         // Set the visual properties (the shader will safely ignore color/alpha if it's set to blur)
         this.finalPass.uniforms.maskColor.value.set(new THREE.Color(controlSettings.colour));
         this.finalPass.uniforms.maskAlpha.value = controlSettings.opacity;
         this.finalPass.uniforms.radius.value = controlSettings.maskRadius;
-        
+
         // Set aspect ratio here to ensure perfect circles on load
         this.finalPass.uniforms.aspect.value = window.innerWidth / window.innerHeight;
 
@@ -2847,54 +2896,54 @@ class InteractiveSearchToolbox {
     }
 
     getVisibleFaces(mesh, camera, faceNormals) {
-            const normalMatrix = new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld);
-            const cameraPosition = camera.position.clone();
-            const visibleFaces = [];
+        const normalMatrix = new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld);
+        const cameraPosition = camera.position.clone();
+        const visibleFaces = [];
 
-            // Each facenormals object has a face name (e.g., right), a normal, and a center
-            // right:  { normal, faceCenter: }
-            for (const [face, { normal, faceCenter }] of Object.entries(faceNormals)) {
-                
-                // Convert normal and face center from local to world
-                const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
+        // Each facenormals object has a face name (e.g., right), a normal, and a center
+        // right:  { normal, faceCenter: }
+        for (const [face, { normal, faceCenter }] of Object.entries(faceNormals)) {
 
-                // Transform local face centre to world space this frame
-                const worldFaceCenter = faceCenter.clone().applyMatrix4(mesh.matrixWorld);
+            // Convert normal and face center from local to world
+            const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
 
-                // Get distance from camera to the face's center point
-                const toCamera = cameraPosition.clone().sub(worldFaceCenter);
+            // Transform local face centre to world space this frame
+            const worldFaceCenter = faceCenter.clone().applyMatrix4(mesh.matrixWorld);
 
-                // If its dot produc is bigger than 0 then it is visible
-                if (worldNormal.dot(toCamera) > 0) {
-                    const faceText = mesh.name + '_' + face
-                    visibleFaces.push(faceText);
-                }
+            // Get distance from camera to the face's center point
+            const toCamera = cameraPosition.clone().sub(worldFaceCenter);
+
+            // If its dot produc is bigger than 0 then it is visible
+            if (worldNormal.dot(toCamera) > 0) {
+                const faceText = mesh.name + '_' + face
+                visibleFaces.push(faceText);
             }
-
-            return visibleFaces;
         }
 
-        getFaceNormals(mesh) {
-            const box = new THREE.Box3().setFromObject(mesh);
-            const size = new THREE.Vector3();
-            box.getSize(size);
-            const half = size.multiplyScalar(0.5);
+        return visibleFaces;
+    }
 
-            const center = new THREE.Vector3();
-            box.getCenter(center);
+    getFaceNormals(mesh) {
+        const box = new THREE.Box3().setFromObject(mesh);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const half = size.multiplyScalar(0.5);
 
-            // Convert center to local space
-            const localCenter = center.clone().applyMatrix4(mesh.matrixWorld.clone().invert());
+        const center = new THREE.Vector3();
+        box.getCenter(center);
 
-            return {
-                right:  { normal: new THREE.Vector3( 1,  0,  0), faceCenter: localCenter.clone().add(new THREE.Vector3( half.x, 0, 0)) },
-                left:   { normal: new THREE.Vector3(-1,  0,  0), faceCenter: localCenter.clone().add(new THREE.Vector3(-half.x, 0, 0)) },
-                top:    { normal: new THREE.Vector3( 0,  1,  0), faceCenter: localCenter.clone().add(new THREE.Vector3(0,  half.y, 0)) },
-                bottom: { normal: new THREE.Vector3( 0, -1,  0), faceCenter: localCenter.clone().add(new THREE.Vector3(0, -half.y, 0)) },
-                front:  { normal: new THREE.Vector3( 0,  0,  1), faceCenter: localCenter.clone().add(new THREE.Vector3(0, 0,  half.z)) },
-                back:   { normal: new THREE.Vector3( 0,  0, -1), faceCenter: localCenter.clone().add(new THREE.Vector3(0, 0, -half.z)) },
-            };
-        }
+        // Convert center to local space
+        const localCenter = center.clone().applyMatrix4(mesh.matrixWorld.clone().invert());
+
+        return {
+            right: { normal: new THREE.Vector3(1, 0, 0), faceCenter: localCenter.clone().add(new THREE.Vector3(half.x, 0, 0)) },
+            left: { normal: new THREE.Vector3(-1, 0, 0), faceCenter: localCenter.clone().add(new THREE.Vector3(-half.x, 0, 0)) },
+            top: { normal: new THREE.Vector3(0, 1, 0), faceCenter: localCenter.clone().add(new THREE.Vector3(0, half.y, 0)) },
+            bottom: { normal: new THREE.Vector3(0, -1, 0), faceCenter: localCenter.clone().add(new THREE.Vector3(0, -half.y, 0)) },
+            front: { normal: new THREE.Vector3(0, 0, 1), faceCenter: localCenter.clone().add(new THREE.Vector3(0, 0, half.z)) },
+            back: { normal: new THREE.Vector3(0, 0, -1), faceCenter: localCenter.clone().add(new THREE.Vector3(0, 0, -half.z)) },
+        };
+    }
 }
 
 window.InteractiveSearchToolbox = InteractiveSearchToolbox;
