@@ -1,0 +1,121 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Search Toolbox</title>
+    <script src="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST@v1.0.0/build/IST.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST@v1.0.0/build/IST.min.css" rel="stylesheet"
+        type="text/css" />
+</head>
+
+<body>
+    <script type="module">
+        // EXAMPLES OF ALL AVAILABLE INTERACTIVE CONTROLS
+
+        const IST = new InteractiveSearchToolbox()
+
+        IST.turnOnLoadingScreen("Loading, please wait...");
+        const modelsToLoad = ['Models/L.glb', 'Models/T.glb', 'Models/TARGET_CUBE.glb', 'Models/Brick.glb', 'Models/HelloWorld.glb']
+
+        IST.preLoadModels(modelsToLoad)
+
+        IST.preloadHDRI(['Textures/smallStudio.hdr'], true) // Setting the second arguement to true automatically applies the HDRI to our scene.
+
+
+        IST.onPreloadFinished(function () {
+
+            function setupTrial() {
+                let helloWorldObject = IST.findLoadedObject('HelloWorld')
+                helloWorldObject.position.x = 0
+                IST.addStimulusToScene(helloWorldObject);
+
+                let cubeObject = IST.findLoadedObject('TARGET_CUBE')
+                cubeObject.scale.set(0.5, 0.5, 0.5)
+                cubeObject.position.set(-3.5, 3, 0)
+                IST.addStimulusToScene(cubeObject);
+
+                let L_Object = IST.findLoadedObject('L')
+                L_Object.scale.set(0.15, 0.15, 0.15)
+                L_Object.position.set(3.5, 2, 0)
+                IST.addStimulusToScene(L_Object);
+
+                let T_Object = IST.findLoadedObject('T')
+                T_Object.scale.set(0.15, 0.15, 0.15)
+                T_Object.position.set(-3.5, -2, 0)
+                IST.addStimulusToScene(T_Object);
+
+                let brickObject = IST.findLoadedObject('Brick')
+                brickObject.scale.set(0.25, 0.25, 0.25)
+                brickObject.position.set(3.5, -2, 0)
+                IST.addStimulusToScene(brickObject);
+
+                IST.camera.position.z = 50;
+
+                // Enable the type of interaction controls you want
+
+                // Drag to rotate
+                IST.enableDragToRotateControls();
+
+                // Orbit 
+                //IST.enableOrbitControls();
+
+                // Drag
+                //IST.enableDragControls(); 
+
+                // Mask
+                //IST.enableMaskControls({maskType:'opaque'}) // Opaque mask
+                //IST.setMaskRadius(0.1,0.05)
+
+                //IST.enableMaskControls({maskType:'opaque', opacity:0.5}) // Transparent mask
+                //IST.setMaskRadius(0.1,0.05)
+
+                //IST.enableMaskControls({maskType:'blur', blurIntensity: 2}) // Blurry mask
+                //IST.setMaskRadius(0.1,0.05)
+
+                // First Person
+                //IST.enableFirstPersonControls();
+
+            }
+
+            // Instruction trial is where we would provide instructions on how to complete the experiment.
+            const INSTRUCTION_TRIAL = {
+                type: htmlButtonResponse,
+                on_start() {
+                },
+                stimulus: `
+                <h3>Welcome!</h3>
+                When you are ready to start, press the button below!
+                `,
+                on_finish(data) {
+                },
+                choices: ['Start Experiment']
+            }
+
+            const SEARCH_TRIAL = {
+                type: htmlKeyboardResponse,
+                on_start() {
+                    setupTrial(); // Gets all the stimuli adds them to the scene and enables choice of controls
+                    IST.startTrial(); // We call this to start the trial - This is extremely important.
+                },
+                stimulus: '', // We tell jspsych not to show anything for the trial, we handle that with the IST instead. 
+                on_finish() {
+                    IST.endTrial(); // Call this at the end of every trial - This is extremely important. 
+                },
+                choices: ['z', 'm']
+            }
+
+
+            IST.turnOffLoadingScreen();
+            
+            jsPsych.run([INSTRUCTION_TRIAL, SEARCH_TRIAL]) // Run experiment
+        }
+        );
+
+
+
+
+    </script>
+</body>
+
+</html>

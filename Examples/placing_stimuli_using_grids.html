@@ -1,0 +1,122 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Search Toolbox</title>
+    <script src="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST@v1.0.0/build/IST.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST@v1.0.0/build/IST.min.css" rel="stylesheet"
+        type="text/css" />
+</head>
+
+<body>
+    <script type="module">
+        // EXAMPLE OF USING THE RANDOM PLACEMENT FUNCTIONS 
+
+        const IST = new InteractiveSearchToolbox()
+
+        IST.turnOnLoadingScreen("Loading, please wait...");
+
+        // Preload everything here
+        let modelsToLoad = ['Models/L.glb', 'Models/T.glb',]
+        IST.preLoadModels(modelsToLoad)
+
+        IST.preloadHDRI(['Textures/smallStudio.hdr'], true) // Setting the second arguement to true automatically applies the HDRI to our scene.
+
+        IST.onPreloadFinished(function () {
+
+            const objectsForScene = [] // We will use this to store the objects we want to have in our scene
+
+            function setupTrial() {
+                // We can create 16 stimuli from the two models we preloaded
+
+                // To do so, clone the master object 16 times and add the cloned object to the objectsForScene array each time
+
+                // In this example, we are also changing the colour of each cloned object
+                for (let i = 0; i < 16; i++) {
+
+                    // Create 15 L shapes and 1 T shape
+                    if (i < 15) {
+                        let newObj = IST.findLoadedObject('L').clone() // Clone the object
+                        // Change the colour of the objects randomly
+                        newObj.traverse(function (child) {
+                            if (child.isMesh) {
+                                child.material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xFFFFFF })
+                            }
+                        })
+
+                        newObj.scale.set(0.1, 0.1, 0.1) // Make the object smaller
+
+                        objectsForScene.push(newObj); // Add it to our stimuli array
+
+                    } else {
+                        let newObj = IST.findLoadedObject('T').clone() // Clone the object
+
+                        // Change the colour of the objects randomly
+                        newObj.traverse(function (child) {
+                            if (child.isMesh) {
+                                child.material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xFFFFFF })
+                            }
+                        })
+
+                        newObj.scale.set(0.1, 0.1, 0.1) // Make the object smaller
+
+                        objectsForScene.push(newObj); // Add it to our stimuli array
+                    }
+
+                }
+
+                IST.camera.position.z = 50
+
+                // Manually placing numerous stimuli is hard work, so let's use one of the helper functions
+
+                // To do so, we place that array into one of the helper function
+                // placeOnGrid() will randomly place each object into the scene within a X by Y grid
+                IST.placeOnGrid({
+                    stimuli: objectsForScene,
+                    columns: 6,
+                    rows: 4,
+                    jitter: 0.1,
+                    distanceBetween: 1,
+                    randomRotation: true,
+                    showDebugGrid: true // Set to false to hide the grid lines
+                });
+                IST.enableDragControls(); // Finally enable the drag controls
+            }
+
+            // Instruction trial is where we would provide instructions on how to complete the experiment.
+            const INSTRUCTION_TRIAL = {
+                type: htmlButtonResponse,
+                on_start() {
+                },
+                stimulus: `
+                <h3>Welcome!</h3>
+                When you are ready to start, press the button below!
+                `,
+                on_finish(data) {
+                },
+                choices: ['Start Experiment']
+            }
+
+            const SEARCH_TRIAL = {
+                type: htmlKeyboardResponse,
+                on_start() {
+                    setupTrial(); // Gets all the stimuli adds them and places them in the scene using the helper function
+                    IST.startTrial(); // We call this to start the trial - This is extremely important.
+                },
+                stimulus: '', // We tell jspsych not to show anything for the trial, we handle that with the IST instead. 
+                on_finish() {
+                    IST.endTrial(); // Call this at the end of every trial - This is extremely important. 
+                },
+                choices: ['z', 'm']
+            }
+
+
+            IST.turnOffLoadingScreen();
+
+            jsPsych.run([INSTRUCTION_TRIAL, SEARCH_TRIAL]) // Run experiment
+        });
+    </script>
+</body>
+
+</html>
