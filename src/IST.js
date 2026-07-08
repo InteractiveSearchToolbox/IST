@@ -188,7 +188,7 @@ class InteractiveSearchToolbox {
 
         // Default settings
         globalSettings = {
-            enableAmbientLighting: true,
+            enableAmbientLighting: false,
             responsiveDisplaySize: true,
             enableHDRI: false
         };
@@ -462,7 +462,7 @@ class InteractiveSearchToolbox {
         this.scene.add(this.camera)
         this.camera.layers.enableAll();
 
-        // Setup gloval renderer
+        // Setup global renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -589,9 +589,6 @@ class InteractiveSearchToolbox {
             }
         });
 
-        // Preload in default HDRI
-        this.preloadDefaultHDRI('https://cdn.jsdelivr.net/gh/HadenDewis/InteractiveSearchToolbox@latest/toolbox_assets/smallStudio.hdr')
-
         this.jsPsychRunning = false
 
         // Attach other libraries as global objects 
@@ -698,7 +695,6 @@ class InteractiveSearchToolbox {
         }
     }
 
-    // Add a flag to enable and disable selecting parents
     raycastScene() {
         // Set raycast position and direction from the camera 
         this.raycaster.setFromCamera(this.pointer, this.camera);
@@ -1616,7 +1612,6 @@ class InteractiveSearchToolbox {
         // LOAD 3D MODELS ///////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////// 
         const objectLoader = new GLTFLoader(this.loadingManager);
-        //const arrayToSaveTo = []
 
 
         for (let i = 0; i < modelsToLoad.length; i++) {// Load a glTF resource
@@ -2024,7 +2019,6 @@ class InteractiveSearchToolbox {
     }
 
 
-    // ADD POINTER LOCK INTO THE FP CONTROLS
     update(callback) {
         this._updateCallback = callback;
     }
@@ -2190,31 +2184,15 @@ class InteractiveSearchToolbox {
             this.setValues(settings, userSettings)
         }
 
-        this.setupMask(settings);
-        /*
-        // Apply settings
-        switch (settings.maskType.toLowerCase()) {
-            case 'blur':
-                console.log('blur')
-                this.setupBlurMask(settings)
-                break
-            case 'opaque':
-                console.log('opaque')
-                this.setupOpaqueMask(settings)
-                break
-            case 'transparent':
-                console.log('transparent')
-                console.log(settings)
-                this.setupTransparentMask(settings)
-                break
-        }*/
-
-
 
         this.disableDragToRotateControls()
         this.disableDragControls()
         this.disableOrbitControls()
         this.disableFirstPersonControls()
+
+        this.setupMask(settings);
+
+        
 
         xAxis.set(1, 0, 0)
         yAxis.set(0, 1, 0)
@@ -2337,7 +2315,6 @@ class InteractiveSearchToolbox {
         let startTime = performance.now();
         let totalSuccesses = 0;
 
-
         for (const object of objectsToPlace) {
             let successfulPlacement = false;
             let collisions = false;
@@ -2402,7 +2379,7 @@ class InteractiveSearchToolbox {
 
             if (performance.now() - startTime > settings.timeout) {
                 this.warningMessage("⚠️\nFailed to place all objects without collision. \nConsider decreasing stimuli size, increasing the 'spread' value, or setting 'ignoreCollisions' to true.")
-                break; // breaks the main loop
+                break; 
             }
 
             if (successfulPlacement) {
@@ -2570,7 +2547,6 @@ class InteractiveSearchToolbox {
     }
 
     placeInConcentricRings(userSettings = null) {
-
         // Default settings
         let settings = {
             stimuli: [],
@@ -2698,7 +2674,6 @@ class InteractiveSearchToolbox {
 
         }
 
-
         if (settings.randomRotation == true) {
             for (let i = 0; i < objects.length; i++) {
                 objects[i].rotation.set(
@@ -2714,8 +2689,6 @@ class InteractiveSearchToolbox {
                 const ring = ringsUnique[settings.ringToUse]
 
                 if (objects.length > ring.length) {
-                    console.log(objects.length, ring.length, 'here')
-                    console.log(ring)
                     this.warningMessage("Not enough spaces for stimuli!")
                     return
                 }
@@ -2739,7 +2712,6 @@ class InteractiveSearchToolbox {
                 // Place randomly across rings
 
                 if (objects.length > rings.length) {
-                    console.log(objects.length, rings.length)
                     this.warningMessage("Not enough spaces for stimuli!")
                     return
                 }
@@ -2755,11 +2727,7 @@ class InteractiveSearchToolbox {
 
         }
 
-
-
         return ({ allRingPositionsCombined: rings, allRingPositionsUnique: ringsUnique })
-
-
     }
 
 
@@ -2797,7 +2765,6 @@ class InteractiveSearchToolbox {
         warningMessageText = document.createElement('span');
         warningMessageText.style.whiteSpace = 'pre-line';
         warningMessageText.style.textAlign = 'center';
-        //warningMessageText.textContent = '⚠️ Warning: Something went wrong!';
 
         // Add close button
         const closeBtn = document.createElement('button');
@@ -2885,7 +2852,6 @@ class InteractiveSearchToolbox {
             }
         }
     }
-
 
     setOverallDragToRotateSensitivity(value) {
         if (!isNaN(value)) {
