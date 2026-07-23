@@ -1,11 +1,18 @@
-import 'jspsych/css/jspsych.css'
+
+
+//import 'jspsych/css/jspsych.css'
 import './style.css'
+
+/*
 import { initJsPsych } from "jspsych"
 import instructions from "@jspsych/plugin-instructions"
 import canvasKeyboardResponse from "@jspsych/plugin-canvas-keyboard-response"
 import canvasButtonResponse from "@jspsych/plugin-canvas-button-response"
 import htmlKeyboardResponse from "@jspsych/plugin-html-keyboard-response"
 import htmlButtonResponse from "@jspsych/plugin-html-button-response"
+*/
+
+
 
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
@@ -190,8 +197,15 @@ class InteractiveSearchToolbox {
         globalSettings = {
             enableAmbientLighting: false,
             responsiveDisplaySize: true,
-            enableHDRI: false
+            enableHDRI: false,
+            threeJSVersion: "",
+            jsPsychVersion: "",
+            jsPychPlugins: [],
+            defaultJsPychPlugins: ["plugin-instructions", "plugin-canvas-keyboard-response", "plugin-canvas-button-response", "plugin-html-keyboard-response", "plugin-html-button-response"],
         };
+
+
+
 
         // If new parameters have been provided, set them.
         if (userSettings != null) {
@@ -334,8 +348,113 @@ class InteractiveSearchToolbox {
         //this.turnOnLoadingScreen();
 
         this.setupWarningMessage();
-        this.setupToolbox();
+        //this.setupToolbox();
     }
+
+    async loadScript(url) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error(`Failed to load: ${url}`));
+            document.head.appendChild(script);
+        });
+    }
+
+    async loadCSSLink(url) {
+        return new Promise((resolve, reject) => {
+            const link = document.createElement('link');
+            link.href = url;
+            link.rel = "stylesheet";
+            link.type = "text/css";
+            link.onload = () => resolve();
+            link.onerror = () => reject(new Error(`Failed to load: ${url}`));
+            document.head.appendChild(link);
+        });
+    }
+
+    async loadScriptsSequentially(urls) {
+        for (const url of urls) {
+            if (url.includes(".css")) {
+                await this.loadCSSLink(url)
+            } else {
+                await this.loadScript(url);
+            }
+
+        }
+    }
+
+
+    async init() {
+        const jsPsychVersion = globalSettings.jsPsychVersion
+        const jsPsychPlugins = globalSettings.jsPychPlugins
+        const defaultJsPychPlugins = globalSettings.defaultJsPychPlugins
+        const jsPsychPluginsToLoad = []
+        const librariesToLoad = []
+        const cssToLoad = []
+
+        if (jsPsychVersion != "") {
+            librariesToLoad.push("https://unpkg.com/jspsych@" + jsPsychVersion)
+            librariesToLoad.push("https://unpkg.com/jspsych@" + jsPsychVersion + "/css/jspsych.css")
+        } else {
+            librariesToLoad.push("https://unpkg.com/jspsych") // Default is latest
+            librariesToLoad.push("https://unpkg.com/jspsych@latest/css/jspsych.css")
+        }
+
+        // Check if user is trying to add libraries that are already loaded...
+        for (const url of defaultJsPychPlugins) {
+            jsPsychPluginsToLoad.push(url)
+        }
+
+        for (const url of jsPsychPlugins) {
+            const pluginName = url.split('@')[0]
+            let isInDefaults = false
+
+            // For each object inside jsPsychPluginsToLoad
+            for (let i = 0; i < jsPsychPluginsToLoad.length; i++) {
+                const defaultURL = jsPsychPluginsToLoad[i]
+                if (defaultURL.includes(pluginName)) {
+                    console.log('Plugin already found in defaults')
+                    isInDefaults = true
+                    // Check if they added a version number else
+                    if (url.includes("@")) {
+                        console.log('User included version number, we use this instead')
+
+                        // Remove previous and use this instead
+                        jsPsychPluginsToLoad[i] = url
+                    } else {
+                        console.log('User did not include version number, sticking with default')
+                    }
+
+                }
+            }
+
+            if (!isInDefaults) {
+                jsPsychPluginsToLoad.push(url)
+            }
+        }
+
+        // Now actually handle all of the jspsych libraries
+        for (const url of jsPsychPluginsToLoad) {
+            librariesToLoad.push("https://unpkg.com/@jspsych/" + url)
+        }
+        console.log(librariesToLoad)
+
+        try {
+            await this.loadScriptsSequentially(librariesToLoad);
+            this.setupToolbox();
+        } catch (error) {
+            console.error('Failed to load required scripts:', error);
+            alert('Oops, something has gone wrong! Please try to reload the page.');
+            throw error; // stops the module here instead of returning
+        }
+
+
+
+
+    }
+
+
 
     onPreloadFinished(callback) {
         // Users manually update this in their own code.
@@ -599,11 +718,11 @@ class InteractiveSearchToolbox {
             }
         });
 
-        window.canvasKeyboardResponse = canvasKeyboardResponse
+        /*window.canvasKeyboardResponse = canvasKeyboardResponse
         window.canvasButtonResponse = canvasButtonResponse
         window.htmlKeyboardResponse = htmlKeyboardResponse
         window.htmlButtonResponse = htmlButtonResponse
-        window.instructions = instructions
+        window.instructions = instructions*/
         window._ = _
 
 
@@ -2192,7 +2311,7 @@ class InteractiveSearchToolbox {
 
         this.setupMask(settings);
 
-        
+
 
         xAxis.set(1, 0, 0)
         yAxis.set(0, 1, 0)
@@ -2379,7 +2498,7 @@ class InteractiveSearchToolbox {
 
             if (performance.now() - startTime > settings.timeout) {
                 this.warningMessage("⚠️\nFailed to place all objects without collision. \nConsider decreasing stimuli size, increasing the 'spread' value, or setting 'ignoreCollisions' to true.")
-                break; 
+                break;
             }
 
             if (successfulPlacement) {
