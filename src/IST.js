@@ -712,8 +712,9 @@ class InteractiveSearchToolbox {
 
         // Attach other libraries as global objects 
         window.THREE = THREE
+        
         window.jsPsych = initJsPsych({
-            on_trial_start: function (trial) {
+            on_trial_start: (trial) => {
                 this.jsPsychRunning = true;
             }
         });
@@ -852,6 +853,7 @@ class InteractiveSearchToolbox {
                 obj.getWorldPosition(worldPos);
 
                 let pos = this.mouseToWorld(worldPos);
+
                 obj.parent.worldToLocal(pos);
                 obj.position.copy(pos);
                 worldPos.set(0, 0, 0)
@@ -1099,34 +1101,39 @@ class InteractiveSearchToolbox {
 
         // If we have provided objects, pick the largest one for spacing
         if (objectsToCheck.length > 0) {
-            // Create a vector to store the size
-            const boundingBox = new THREE.Box3();
-            let previousArea = 0
-            const size = new THREE.Vector3();
-            let finalSize = new THREE.Vector3();
 
-            for (let i = 0; i < objectsToCheck.length; i++) {
-                let obj = objectsToCheck[i]
-                let originalRot = new THREE.Quaternion()
-                originalRot.copy(obj.quaternion)
-                obj.quaternion.identity();
+            if (settings.autoSize) {
+                // Create a vector to store the size
+                const boundingBox = new THREE.Box3();
+                let previousArea = 0
+                const size = new THREE.Vector3();
+                let finalSize = new THREE.Vector3();
 
-                boundingBox.setFromObject(obj);
-                boundingBox.getSize(size);
+                for (let i = 0; i < objectsToCheck.length; i++) {
+                    let obj = objectsToCheck[i]
+                    let originalRot = new THREE.Quaternion()
+                    originalRot.copy(obj.quaternion)
+                    obj.quaternion.identity();
 
-                let area = size.x * size.y
+                    boundingBox.setFromObject(obj);
+                    boundingBox.getSize(size);
 
-                if (previousArea < area) {
-                    finalSize = size
+                    let area = size.x * size.y
+
+                    if (previousArea < area) {
+                        finalSize = size
+                    }
+
+                    previousArea = area
+
+                    obj.quaternion.copy(originalRot)
                 }
 
-                previousArea = area
+                settings.itemWidth = size.x
+                settings.itemHeight = size.y
 
-                obj.quaternion.copy(originalRot)
             }
 
-            settings.itemWidth = size.x
-            settings.itemHeight = size.y
         }
 
         let positions = []
@@ -1195,9 +1202,9 @@ class InteractiveSearchToolbox {
             }
         }
 
-        this.scene.add(debugGrid)
+        //this.scene.add(debugGrid)
 
-        if (settings.showDebugGrid == true) { debugGrid.visible = true } else { debugGrid.visible = false }
+        //if (settings.showDebugGrid == true) { debugGrid.visible = true } else { debugGrid.visible = false }
 
         // Returns object that lists all positions, the next free empty slot, a pointer to the debug grid, and the number of rows and columns in the grid
         return { positions: positions, nextEmptyPosition: nextEmptyPosition, debugGrid: debugGrid, rows: settings.rows, columns: settings.columns }
@@ -1330,12 +1337,18 @@ class InteractiveSearchToolbox {
             }
         }
 
-        this.scene.add(debugGrid)
+        const gridObject = { positions: positions, nextEmptyPosition: nextEmptyPosition, debugGrid: debugGrid, rows: settings.rows, columns: settings.columns }
+        
+        if (settings.showDebugGrid == true) { 
+            this.addStimulusToScene(gridObject.debugGrid)
+        }
 
-        if (settings.showDebugGrid == true) { debugGrid.visible = true } else { debugGrid.visible = false }
+        //this.scene.add(debugGrid)
+
+        //if (settings.showDebugGrid == true) { debugGrid.visible = true } else { debugGrid.visible = false }
 
         // Returns object that lists all positions, the next free empty slot, a pointer to the debug grid, and the number of rows and columns in the grid
-        return { positions: positions, nextEmptyPosition: nextEmptyPosition, debugGrid: debugGrid, rows: settings.rows, columns: settings.columns }
+        return gridObject
     }
 
     placeOnGrid(userSettings = null) {
@@ -1348,6 +1361,7 @@ class InteractiveSearchToolbox {
             distanceBetween: 3,
             itemWidth: 1,
             itemHeight: 1,
+            autoSize: true,
             jitter: 0,
             cameraAxis: 'Z',
             randomRotation: true,
@@ -1407,15 +1421,19 @@ class InteractiveSearchToolbox {
             object.position.set(pos.x, pos.y, pos.z)
             settings.gridObject.nextEmptyPosition++
 
-            object.grid_parent = parentObj;
+            //object.grid_parent = parentObj;
 
             this.addStimulusToScene(object)
-            parentObj.add(object)
+            //parentObj.add(object)
         });
 
-        parentObj.add(settings.gridObject.debugGrid)
-        this.addStimulusToScene(parentObj);
-        return (parentObj)
+        if (settings.showDebugGrid == true) { 
+            this.addStimulusToScene(settings.gridObject.debugGrid)
+        }
+
+        //parentObj.add(settings.gridObject.debugGrid)
+        //this.addStimulusToScene(parentObj);
+        return (settings.gridObject)
     }
 
     placeOnManualGrid(userSettings = null) {
@@ -1619,16 +1637,16 @@ class InteractiveSearchToolbox {
                 );
 
                 gridObject.nextEmptyPosition++
-                object.grid_parent = parentObj
+                //object.grid_parent = parentObj
 
                 this.addStimulusToScene(object)
-                parentObj.add(object)
+                //parentObj.add(object)
             });
         }
 
-        parentObj.add(gridObject.debugGrid)
-        this.addStimulusToScene(parentObj);
-        return (parentObj)
+        //parentObj.add(gridObject.debugGrid)
+        //this.addStimulusToScene(parentObj);
+        return (gridObject)
     }
 
     preloadDefaultHDRI(pathToHDRI) {
@@ -1678,6 +1696,8 @@ class InteractiveSearchToolbox {
 
         for (let i = 0; i < texturesToLoad.length; i++) {
             textureLoader.load(texturesToLoad[i], (texture) => {
+                const textureName = this.getFileName(texturesToLoad[i])
+                texture.name = textureName
                 this.loadedTextures.push(texture)
             });
         }
@@ -1805,6 +1825,9 @@ class InteractiveSearchToolbox {
 
         this.stopAnimationLoop()
 
+        this.selectedObject = null;
+        this.currentRaycastObject = null;
+
         // Save interaction data internally
         this.interactionData["IST_TRIAL_INDEX"].push(this.currentTrialIndex)
         this.interactionData["SCENE_INFO"].push(this.currentSceneInfo)
@@ -1819,7 +1842,6 @@ class InteractiveSearchToolbox {
 
         if (this.jsPsychRunning) {
             this.getCurrentTrialData_JSPsych().IST_TRIAL_INDEX = this.currentTrialIndex
-
             const jspsychData = this.getBehaviouralData()
             this.addGlobalData("JS_PSYCH_DATA", jspsychData, { stringify: false })
         }
@@ -2087,6 +2109,28 @@ class InteractiveSearchToolbox {
                         w: child.quaternion.w
                     }
 
+                }
+                SCENE_INFO.push(jsonInfo);
+            }
+
+            else if (child.isSprite) {
+                const jsonInfo = {
+                    TYPE: child.type,
+                    NAME: child.name,
+                    POSITION: {
+                        x: child.position.x,
+                        y: child.position.y,
+                        z: child.position.z
+                    },
+                    QUATERNION: {
+                        x: child.quaternion.x,
+                        y: child.quaternion.y,
+                        z: child.quaternion.z,
+                        w: child.quaternion.w
+                    },
+                    TRUE_ROTATION:{
+                        y:child.material.rotation
+                    }
                 }
                 SCENE_INFO.push(jsonInfo);
             }
@@ -2509,7 +2553,7 @@ class InteractiveSearchToolbox {
             }
         }
 
-        this.addStimulusToScene(parentObj);
+        //this.addStimulusToScene(parentObj);
         return (parentObj)
     }
 
@@ -2655,14 +2699,15 @@ class InteractiveSearchToolbox {
 
             if (successfulPlacement) {
                 boundingBoxesInScene.push(boundingBox);
-                object.grid_parent = parentObj
+                //object.grid_parent = parentObj
                 this.addStimulusToScene(object);
-                parentObj.add(object)
+                //parentObj.add(object)
             }
         }
 
-        this.addStimulusToScene(parentObj);
-        return (parentObj);
+        //this.addStimulusToScene(parentObj);
+        //return (parentObj);
+        return (objectsToPlace);
     }
 
     placeInConcentricRings(userSettings = null) {
