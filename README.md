@@ -39,8 +39,8 @@ IST.init().then(function(){
 
 
 
-## API / Documentation
-Brief reference or link to fuller docs.
+## Guides
+Basics and tutorials [here](https://hjgodwin.github.io/searchLab/istguide/).
 
 
 ## License
