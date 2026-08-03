@@ -23,7 +23,7 @@ There are two ways to do this.
 - Option 1: use the ```await``` keyword 
 ```js
 // Option 1
-const IST = new InteractiveSearchToolbox({enableAmbientLighting: true });
+const IST = new InteractiveSearchToolbox({enableAmbientLighting: true});
 await IST.init();
 
 // Rest of the experiment goes here...
