@@ -18,7 +18,7 @@ Option 2 - Download files to local directory and include these within your own p
 ## Usage
 Add the class into your javascript file once at the top of your file and initiate it using ```.init()```.
 
-The IST dynamically imports other libraries at run time. As such, you must waitfor ```init()``` to complete.
+The IST dynamically imports other libraries at run time. As such, you must wait for ```init()``` to complete.
 There are two ways to do this. 
 - Option 1: use the ```await``` keyword 
 ```js
@@ -28,7 +28,7 @@ await IST.init();
 
 // Rest of the experiment goes here...
 ```
-- Option 2: Use the .then() syntax.
+- Option 2: Use the ```.then()``` syntax.
 ```js
 // Option 2
 const IST = new InteractiveSearchToolbox({enableAmbientLighting: true });   
