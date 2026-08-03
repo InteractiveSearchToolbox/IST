@@ -1,6 +1,8 @@
 // For the sake of this example, we will enable some quick ambient lighting
 const IST = new InteractiveSearchToolbox({ enableAmbientLighting: true })
 
+await IST.init();
+
 // Before doing any other processing, we turn on the loading screen
 IST.turnOnLoadingScreen("Loading...")
 
@@ -78,21 +80,7 @@ IST.onPreloadFinished(function () {
             }
 
             // Next we change the colour of the cubes whilst leaving the T and L shapes unchanged.
-            // Traverse loops through all items within the three.js object
-            cloned_cube.traverse((o) => {
-                // Go through all items, if the selected item is a mesh...
-                if (o.isMesh) {
-                    // If the mesh we're inspecting includes the name BASE, it is the one we want (we named this back in Blender)
-                    if (o.name.includes("BASE")) {
-                        // If the cloned object we're working with is high effort, we assign it colour 1 from the colours we picked earlier, else we assign it colour 2.
-                        if (cloned_cube.name.includes("HIGH")) {
-                            o.material = new THREE.MeshStandardMaterial({ color: colourSelection[0] })
-                        } else {
-                            o.material = new THREE.MeshStandardMaterial({ color: colourSelection[1] })
-                        }
-                    }
-                }
-            });
+            changeCubeColour(cloned_cube)
 
             // Distractor cube is now made, so save it to our distractors array.
             distractors.push(cloned_cube)
@@ -109,22 +97,8 @@ IST.onPreloadFinished(function () {
             }
 
             // Next we change the colour of the cubes whilst leaving the T and L shapes unchanged.
-            // Traverse loops through all items within the three.js object
-            cloned_target_cube.traverse((o) => {
-                // Go through all items, if the selected item is a mesh...
-                if (o.isMesh) {
-                    // If the mesh we're inspecting includes the name BASE, it is the one we want (we named this back in Blender)
-                    if (o.name.includes("BASE")) {
-                        // If the cloned object we're working with is high effort, we assign it colour 1 from the colours we picked earlier, else we assign it colour 2.
-                        if (cloned_target_cube.name.includes("HIGH")) {
-                            o.material = new THREE.MeshStandardMaterial({ color: colourSelection[0] })
-                        } else {
-                            o.material = new THREE.MeshStandardMaterial({ color: colourSelection[1] })
-                        }
-                    }
-                }
-            });
-
+            changeCubeColour(cloned_target_cube)
+            
             // Target cube is now made, so save it to our targets array.
             targets.push(cloned_target_cube)
         }
@@ -194,8 +168,28 @@ IST.onPreloadFinished(function () {
         }
 
         // Finally set virtual camera position each trial
-        IST.camera.position.z = 150;
+        IST.camera.position.set(0,0,150);
         IST.camera.lookAt(0, 0, 0)
+    }
+
+    function changeCubeColour(cube) {
+
+        // Traverse loops through all items within the three.js object
+        cube.traverse((o) => {
+            // Go through all items, if the selected item is a mesh...
+            if (o.isMesh) {
+                // If the mesh we're inspecting includes the name BASE, it is the one we want (we named this back in Blender)
+                if (o.name.includes("BASE")) {
+                    // If the cloned object we're working with is high effort, we assign it colour 1 from the colours we picked earlier, else we assign it colour 2.
+                    if (cube.name.includes("HIGH")) {
+                        o.material = new THREE.MeshStandardMaterial({ color: colourSelection[0] })
+                    } else {
+                        o.material = new THREE.MeshStandardMaterial({ color: colourSelection[1] })
+                    }
+                }
+            }
+        });
+
     }
 
 
@@ -208,7 +202,7 @@ IST.onPreloadFinished(function () {
 
     // Instruction trial is where we would provide instructions on how to complete the experiment.
     const INSTRUCTION_TRIAL = {
-        type: htmlButtonResponse,
+        type: jsPsychHtmlButtonResponse,
         on_start() {
         },
         stimulus: `
@@ -235,7 +229,7 @@ IST.onPreloadFinished(function () {
 
     // Fixation cross displayed before each search trial
     const FIXATION_CROSS_TRIAL = {
-        type: htmlKeyboardResponse,
+        type: jsPsychHtmlKeyboardResponse,
         stimulus: '<p style="font-size: 48px;">+</p>',
         choices: "NO_KEYS",
         trial_duration: 500,
@@ -247,7 +241,7 @@ IST.onPreloadFinished(function () {
 
     // HERE IS WHERE WE CARRY OUT OUR INTERACTIVE SEARCHES
     const SEARCH_TRIAL = {
-        type: htmlKeyboardResponse,
+        type: jsPsychHtmlKeyboardResponse,
         on_start() {
             trialSetup(); // Call this at the start of each trial - this fetches our processed stimuli and places them accordingly
             IST.startTrial(); // Finally we call this to start the trial - This is extremely important.
@@ -267,7 +261,7 @@ IST.onPreloadFinished(function () {
     // Finally, this is the trial we show participants after they have finished the rest of the experiment
     // It is here that we save our data...
     const DEBREIF_TRIAL = {
-        type: htmlButtonResponse,
+        type: jsPsychHtmlButtonResponse,
 
         // Note here how we have made the on_start() method async - this is so we can make it wait whilst it saves the data
         async on_start() {

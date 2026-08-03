@@ -198,6 +198,7 @@ class InteractiveSearchToolbox {
             enableAmbientLighting: false,
             responsiveDisplaySize: true,
             enableHDRI: false,
+            autoHideCanvas: true,
             threeJSVersion: "",
             jsPsychVersion: "",
             jsPychPlugins: [],
@@ -993,6 +994,7 @@ class InteractiveSearchToolbox {
 
         const loadingText = document.createElement('div')
         loadingText.setAttribute('id', 'loadingText');
+        loadingText.style.textAlign = 'center'
         loadingText.innerText = 'Loading'
 
         const loader_style = document.createElement("style");
@@ -1093,10 +1095,10 @@ class InteractiveSearchToolbox {
         let objectsToCheck
 
         // If it's not an array, make it one.
-        if (Array.isArray(settings.stimuli)) {
-            objectsToCheck = settings.stimuli
+        if (Array.isArray(settings.objectsToPlace)) {
+            objectsToCheck = settings.objectsToPlace
         } else {
-            objectsToCheck = [settings.stimuli]
+            objectsToCheck = [settings.objectsToPlace]
         }
 
         // If we have provided objects, pick the largest one for spacing
@@ -1214,7 +1216,7 @@ class InteractiveSearchToolbox {
     calculateGridPositions(userSettings = null) {
         // Default settings.
         let settings = {
-            stimuli: [],
+            objectsToPlace: [],
             rows: 4,
             columns: 4,
             distanceBetween: 3,
@@ -1231,10 +1233,10 @@ class InteractiveSearchToolbox {
         let objectsToCheck
 
         // If it's not an array, make it one.
-        if (Array.isArray(settings.stimuli)) {
-            objectsToCheck = settings.stimuli
+        if (Array.isArray(settings.objectsToPlace)) {
+            objectsToCheck = settings.objectsToPlace
         } else {
-            objectsToCheck = [settings.stimuli]
+            objectsToCheck = [settings.objectsToPlace]
         }
 
         // If we have provided objects, pick the largest one for spacing
@@ -1340,7 +1342,7 @@ class InteractiveSearchToolbox {
         const gridObject = { positions: positions, nextEmptyPosition: nextEmptyPosition, debugGrid: debugGrid, rows: settings.rows, columns: settings.columns }
         
         if (settings.showDebugGrid == true) { 
-            this.addStimulusToScene(gridObject.debugGrid)
+            this.scene.add(gridObject.debugGrid)
         }
 
         //this.scene.add(debugGrid)
@@ -1354,7 +1356,7 @@ class InteractiveSearchToolbox {
     placeOnGrid(userSettings = null) {
         // Default settings.
         let settings = {
-            stimuli: [],
+            objectsToPlace: [],
             gridObject: null,
             rows: 4,
             columns: 4,
@@ -1380,13 +1382,13 @@ class InteractiveSearchToolbox {
         let objectsToPlace, gridObject;
 
         // If it's not an array, make it one.
-        if (Array.isArray(settings.stimuli)) {
-            settings.stimuli = settings.stimuli
+        if (Array.isArray(settings.objectsToPlace)) {
+            settings.objectsToPlace = settings.objectsToPlace
         } else {
-            settings.stimuli = [settings.stimuli]
+            settings.objectsToPlace = [settings.objectsToPlace]
         }
 
-        objectsToPlace = settings.stimuli
+        objectsToPlace = settings.objectsToPlace
 
         if (settings.gridObject == null) {
             settings.gridObject = this.calculateGridPositionsInternal(settings)
@@ -1428,7 +1430,7 @@ class InteractiveSearchToolbox {
         });
 
         if (settings.showDebugGrid == true) { 
-            this.addStimulusToScene(settings.gridObject.debugGrid)
+            this.scene.add(settings.gridObject.debugGrid)
         }
 
         //parentObj.add(settings.gridObject.debugGrid)
@@ -1439,7 +1441,7 @@ class InteractiveSearchToolbox {
     placeOnManualGrid(userSettings = null) {
         // Default settings.
         let settings = {
-            stimuli: [],
+            objectsToPlace: [],
             gridObject: {},
             randomRotation: true,
             randomRotateX: false,
@@ -1455,13 +1457,13 @@ class InteractiveSearchToolbox {
         let objectsToPlace, gridObject;
 
         // If it's not an array, make it one.
-        if (Array.isArray(settings.stimuli)) {
-            settings.stimuli = settings.stimuli
+        if (Array.isArray(settings.objectsToPlace)) {
+            settings.objectsToPlace = settings.objectsToPlace
         } else {
-            settings.stimuli = [settings.stimuli]
+            settings.objectsToPlace = [settings.objectsToPlace]
         }
 
-        objectsToPlace = settings.stimuli
+        objectsToPlace = settings.objectsToPlace
 
         gridObject = settings.gridObject;
 
@@ -1821,7 +1823,7 @@ class InteractiveSearchToolbox {
 
     }
 
-    endTrial() {
+    endTrial(clearScene = true) {
 
         this.stopAnimationLoop()
 
@@ -1833,10 +1835,16 @@ class InteractiveSearchToolbox {
         this.interactionData["SCENE_INFO"].push(this.currentSceneInfo)
         this.interactionData["INTERACTION_DATA"].push(this.singleTrialInteractionData)
 
-        this.stimuliInScene.forEach(object => {
-            this.removeStimulusFromScene(object)
-        });
-        this.interactiveCanvas.style.display = 'none'
+        if(clearScene){
+            this.stimuliInScene.forEach(object => {
+                this.removeStimulusFromScene(object)
+            });
+        }
+        
+        if(globalSettings.autoHideCanvas){
+            this.interactiveCanvas.style.display = 'none'
+        }
+        
 
         this.currentTrialIndex++;
 
@@ -2713,7 +2721,7 @@ class InteractiveSearchToolbox {
     placeInConcentricRings(userSettings = null) {
         // Default settings
         let settings = {
-            stimuli: [],
+            objectsToPlace: [],
             itemWidth: null,
             itemHeight: null,
             ringToUse: null,
@@ -2734,18 +2742,18 @@ class InteractiveSearchToolbox {
         }
 
         // If it's not an array, make it one.
-        if (Array.isArray(settings.stimuli)) {
-            settings.stimuli = settings.stimuli
+        if (Array.isArray(settings.objectsToPlace)) {
+            settings.objectsToPlace = settings.objectsToPlace
         } else {
-            settings.stimuli = [settings.stimuli]
+            settings.objectsToPlace = [settings.objectsToPlace]
         }
 
-        if (settings.stimuli.length == 0) {
+        if (settings.objectsToPlace.length == 0) {
             this.warningMessage("Please include the objects you want to place!")
             return
         }
 
-        const objects = settings.stimuli
+        const objects = settings.objectsToPlace
 
 
         // Check if users have provided item width or height
