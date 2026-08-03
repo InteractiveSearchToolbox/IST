@@ -1,9 +1,6 @@
 # InteractiveSearchToolbox
-The Interactive Search Toolbox is a JavaScript library for creating and running computer-based interactive search experiments. The toolbox works in tandem with the open-source JavaScript libraries Three.js, jsPsych, and lodash to simplify creating virtual interactive search experiments capable of recording and storing large quantities of moment-to-moment interactive data packaged into standard experimental psychology frameworks. 
+The Interactive Search Toolbox is a JavaScript library for creating and running computer-based interactive search experiments. The toolbox works in tandem with the open-source JavaScript libraries [Three.js](https://threejs.org/), [jsPsych](https://www.jspsych.org/latest/), and [lodash](https://lodash.com/) to simplify creating virtual interactive search experiments capable of recording and storing large quantities of moment-to-moment interactive data packaged into standard experimental psychology frameworks. 
 ![logo](IST.svg)
-
-## Features
-- What it does
 
 ## Installation
 Option 1 - Include library and css sheet via CDN.
@@ -15,8 +12,8 @@ Option 1 - Include library and css sheet via CDN.
 ```
 
 Option 2 - Download files to local directory and include these within your own project
-- IST: [here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js)
-- IST CSS: [here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.css)
+- IST - [here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js)
+- IST CSS - [here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.css)
 
 ## Usage
 Add the class into your javascript file once at the top of your file and initiate it using ```.init()```.
