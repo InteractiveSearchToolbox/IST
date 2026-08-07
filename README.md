@@ -1,4 +1,4 @@
-![logo](Logos/LogoSVG.svg)
+![logo](Logos/LogoSVGSmall.svg)
 # Interactive Search Toolbox
 The Interactive Search Toolbox is a JavaScript library for creating and running computer-based interactive search experiments. The toolbox works in tandem with the open-source JavaScript libraries [Three.js](https://threejs.org/), [jsPsych](https://www.jspsych.org/latest/), and [lodash](https://lodash.com/) to simplify creating virtual interactive search experiments capable of recording and storing large quantities of moment-to-moment interactive data packaged into standard experimental psychology frameworks. 
 
