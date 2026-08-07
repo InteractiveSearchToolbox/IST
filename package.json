@@ -16,8 +16,8 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "vite": "^7.3.1",
-    "terser": "^5.46.0"
+    "terser": "^5.46.0",
+    "vite": "^7.3.1"
   },
   "dependencies": {
     "@jspsych/plugin-canvas-button-response": "^2.1.0",
@@ -26,7 +26,6 @@
     "@jspsych/plugin-html-keyboard-response": "^2.1.0",
     "@jspsych/plugin-instructions": "^2.1.0",
     "jspsych": "^8.2.2",
-    "lodash": "^4.17.23",
-    "three": "^0.182.0"
+    "lodash": "^4.17.23"
   }
 }

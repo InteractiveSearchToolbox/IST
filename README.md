@@ -12,11 +12,11 @@ Option 1 - Include library and css sheet via CDN.
 ```
 
 Option 2 - Download files to local directory and include these within your own project
-- IST - [here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js)
-- IST CSS - [here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.css)
+- IST - [download here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js)
+- IST CSS - [download here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.css)
 
 ## Usage
-Add the class into your javascript file once at the top of your file and initiate it using ```.init()```.
+Add the class into your project once at the top of your javascript file and initiate it using ```init()```.
 
 The IST dynamically imports other libraries at run time. As such, you must wait for ```init()``` to complete.
 There are two ways to do this. 
@@ -37,10 +37,76 @@ IST.init().then(function(){
 });
 ```
 
+- Note, if using option 1 inside of a function, then you will need to list that function as ```async```. 
+## I want to use other three.js addons?
+It is easy to add other three.js classes/addons that are not already included by default within the IST by using the ```threeAddons``` setting when adding the IST to your project. 
 
+Simply include the name of the class/module you want to import and the path to that class/module in an array and pass that to the ```threeAddons``` setting.
+
+For example, if you wanted to include an FBX loader and the post processing Bloom Pass effect...
+```js
+const IST = new InteractiveSearchToolbox({
+    threeAddons:[
+        ["FBXLoader","three/addons/loaders/FBXLoader.js"],
+        ["BloomPass","three/addons/postprocessing/BloomPass.js"]
+    ]
+})    
+await IST.init()
+```
+
+## I want to use other jsPsych Plugins
+The IST comes with several jsPsych plugins included as default but if you need more you can simply add them via the ```jsPsychPlugins``` setting.
+
+```js
+const IST = new InteractiveSearchToolbox({
+    jsPychPlugins: ["plugin-instructions","plugin-survey-multi-choice@2.2.1"]
+})    
+await IST.init()
+```
+To specify a particular version of any plugin, add ```@``` and the version number at the end of the plugin name. 
+If no version number is provided, the latest version of the plugin will be used.
+
+If a plugin is already included by default and you re-include it within this list, then the IST will not re-load this plugin unless you have specified a version different to what is already loaded.
+
+## I want to use a different jsPsych/three.js version?
+If you want to change which version of jsPsych or three.js the IST is using then you can do so via the ```jsPsychVersion``` and the ```threeJSVersion``` settings. 
+
+```js
+const IST = new InteractiveSearchToolbox({
+    jsPsychVersion: "8.2.2",
+    threeJSVersion: "0.170.0",
+})    
+await IST.init()
+```
+
+If no versions are supplied, the latest version available will be used.
+Note that using older versions may produce unexpected errors/behaviours.
+
+## Give me physcis!
+If you want to add physics simulations to your project simply set the ```includePhysics``` setting to ```true```.
+
+```js
+const IST = new InteractiveSearchToolbox({
+    includePhysics: true
+})    
+await IST.init()
+```
+
+Now the RapierJS physics engine is loaded and ready to use. All features can be accessed via the global ```RAPIER``` variable.
+
+For instructions on how to use RapierJS, visit their documentation site [here](https://rapier.rs/docs/user_guides/javascript/rigid_bodies). 
 
 ## Guides
 Basics and tutorials [here](https://hjgodwin.github.io/searchLab/istguide/).
 
 
 ## License
+The MIT License (MIT)
+
+Copyright (c) 2026 Haden Dewis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

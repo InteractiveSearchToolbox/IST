@@ -14,12 +14,13 @@ import htmlButtonResponse from "@jspsych/plugin-html-button-response"
 
 
 
+/*
 import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import _, { forEach } from "lodash";
+
 
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
@@ -27,15 +28,17 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { HorizontalBlurShader } from 'three/examples/jsm/shaders/HorizontalBlurShader.js'
 import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShader.js'
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
+*/
 
+import _, { forEach } from "lodash";
 
 let globalSettings
-let xAxis = new THREE.Vector3(1, 0, 0)
-let yAxis = new THREE.Vector3(0, 1, 0)
-let zAxis = new THREE.Vector3(0, 1, 0)
-let worldPointer = new THREE.Vector3(0, 0, 0.5);
-let distance_vector = new THREE.Vector3(0, 0, 0)
-let worldPos = new THREE.Vector3();
+let xAxis// = new THREE.Vector3(1, 0, 0)
+let yAxis// = new THREE.Vector3(0, 1, 0)
+let zAxis// = new THREE.Vector3(0, 1, 0)
+let worldPointer// = new THREE.Vector3(0, 0, 0.5);
+let distance_vector// = new THREE.Vector3(0, 0, 0)
+let worldPos //= new THREE.Vector3();
 
 let warningBox;
 let warningBoxText;
@@ -51,8 +54,8 @@ const targetRotation = {
 };
 
 // Clamp values (in radians)
-const MIN_X = THREE.MathUtils.degToRad(-40);
-const MAX_X = THREE.MathUtils.degToRad(60);
+const MIN_X = degToRad(-40);
+const MAX_X = degToRad(60);
 
 function degToRad(degrees) {
     return (degrees * (Math.PI / 180))
@@ -127,7 +130,7 @@ class ExperimentClock {
     }
 }
 
-const MaskShader = {
+let MaskShader/* = {
     uniforms: {
         "tDiffuse": { value: null },  // the blurred scene (current pass input)
         "tSharp": { value: null },    // the original sharp scene
@@ -189,6 +192,7 @@ const MaskShader = {
         }
     `
 };
+*/
 
 class InteractiveSearchToolbox {
     constructor(userSettings = null) {
@@ -199,10 +203,12 @@ class InteractiveSearchToolbox {
             responsiveDisplaySize: true,
             enableHDRI: false,
             autoHideCanvas: true,
-            threeJSVersion: "",
+            threeJSVersion: "latest",
+            threeAddons:[],//["TransformControls","three/addons/controls/TransformControls.js"]
             jsPsychVersion: "",
             jsPychPlugins: [],
             defaultJsPychPlugins: ["plugin-instructions", "plugin-canvas-keyboard-response", "plugin-canvas-button-response", "plugin-html-keyboard-response", "plugin-html-button-response"],
+            includePhysics: false
         };
 
 
@@ -213,30 +219,9 @@ class InteractiveSearchToolbox {
             this.setValues(globalSettings, userSettings)
         }
 
-        this.preloadingManager = new THREE.LoadingManager();
+        this.preloadingManager;
 
-        this.preloadingManager.onLoad = () => {
-
-            this.preloadedGLBsDone = true;
-
-            if (this._preloadFinishedCallback != null) {
-                this._preloadFinishedCallback();
-            }
-        }
-
-        this.preloadingManager.onError = (url) => {
-            console.error('Error loading:', url);
-        };
-
-
-        this.loadingManager = new THREE.LoadingManager();
-        this.loadingManager.onLoad = () => {
-            this.onLoadingManagerLoad()
-        }
-
-        this.loadingManager.onError = (url) => {
-            console.error('Error loading:', url);
-        };
+        this.loadingManager; 
 
         this.loadedModels = [];
         this.loadedTextures = [];
@@ -272,21 +257,21 @@ class InteractiveSearchToolbox {
 
 
         // Interaction Controls variables
-        this.raycaster = new THREE.Raycaster();
-        this.raycaster.layers.set(0);
-        this.pointer = new THREE.Vector2();
-        this.pointerDelta = new THREE.Vector2();
+        this.raycaster// = new THREE.Raycaster();
+        //this.raycaster.layers.set(0);
+        this.pointer// = new THREE.Vector2();
+        this.pointerDelta// = new THREE.Vector2();
         this.mouseX = 0;
         this.mouseY = 0;
-        this.previousPointer = new THREE.Vector2();
+        this.previousPointer// = new THREE.Vector2();
         this.delta = 0
         this.currentFrameTime = 0
-        this.timer = new THREE.Timer();
-        this.timer.connect(document);
+        this.timer// = new THREE.Timer();
+        //this.timer.connect(document);
 
         this.experimentClock = new ExperimentClock()
 
-        this.worldPosition = new THREE.Vector3()
+        this.worldPosition// = new THREE.Vector3()
         //this.zOffset = 5
         //this.zTarget = new THREE.Vector3()
         this.pointerDown = false;
@@ -339,9 +324,7 @@ class InteractiveSearchToolbox {
         }
 
 
-        this.stats = new Stats();
-        document.body.appendChild(this.stats.dom);
-        this.stats.dom.style.display = 'none'
+        this.stats;
 
         document.body.style.margin = "0";
 
@@ -385,11 +368,140 @@ class InteractiveSearchToolbox {
         }
     }
 
+    async loadThree() {
+        const threeVersion = globalSettings.threeVersion || "latest"
+
+        const importMap = document.createElement('script')
+        importMap.type = 'importmap'
+        importMap.textContent = JSON.stringify({
+            imports: {
+                "three": `https://cdn.jsdelivr.net/npm/three@${threeVersion}/build/three.module.js`,
+                "three/addons/": `https://cdn.jsdelivr.net/npm/three@${threeVersion}/examples/jsm/`
+            }
+        })
+        document.head.appendChild(importMap)
+
+        // Load all the defaults required
+        const [
+            THREE,
+            StatsModule,
+            { HDRLoader },
+            { GLTFLoader },
+            { OrbitControls },
+            { EffectComposer },
+            { RenderPass },
+            { ShaderPass },
+            { HorizontalBlurShader },
+            { VerticalBlurShader },
+            { GammaCorrectionShader }
+        ] = await Promise.all([
+            import(/* @vite-ignore */ 'three'),
+            import(/* @vite-ignore */ 'three/addons/libs/stats.module.js'),
+            import(/* @vite-ignore */ 'three/addons/loaders/HDRLoader.js'),
+            import(/* @vite-ignore */ 'three/addons/loaders/GLTFLoader.js'),
+            import(/* @vite-ignore */ 'three/addons/controls/OrbitControls.js'),
+            import(/* @vite-ignore */ 'three/addons/postprocessing/EffectComposer.js'),
+            import(/* @vite-ignore */ 'three/addons/postprocessing/RenderPass.js'),
+            import(/* @vite-ignore */ 'three/addons/postprocessing/ShaderPass.js'),
+            import(/* @vite-ignore */ 'three/addons/shaders/HorizontalBlurShader.js'),
+            import(/* @vite-ignore */ 'three/addons/shaders/VerticalBlurShader.js'),
+            import(/* @vite-ignore */ 'three/addons/shaders/GammaCorrectionShader.js'),
+        ])
+
+        window.THREE = THREE
+        window.Stats = StatsModule.default
+        window.HDRLoader = HDRLoader
+        window.GLTFLoader = GLTFLoader
+        window.OrbitControls = OrbitControls
+        window.EffectComposer = EffectComposer
+        window.RenderPass = RenderPass
+        window.ShaderPass = ShaderPass
+        window.HorizontalBlurShader = HorizontalBlurShader
+        window.VerticalBlurShader = VerticalBlurShader
+        window.GammaCorrectionShader = GammaCorrectionShader
+
+        
+    }
+
+    async loadAdditionalThreeAddons(){
+        const threeAddons = globalSettings.threeAddons
+        if(threeAddons.length > 0){
+            for(let i = 0; i < threeAddons.length; i++){
+                const module = threeAddons[i]
+                const globalName = module[0];
+                const importPath = module[1];
+                const importedModule = await import(/* @vite-ignore */ importPath)
+                console.log(module)
+                console.log(importedModule)
+
+                // Prefer a named export matching globalName; fall back to default
+                window[globalName] = importedModule[globalName] ?? importedModule.default
+
+                if (window[globalName] === undefined) {
+                    console.warn(`Addon "${importPath}" loaded, but no export named "${globalName}" or a default export was found.`)
+                }
+            }
+        }
+
+    }
+
+    setupLoadingManagers(){
+        this.preloadingManager = new THREE.LoadingManager();
+
+        this.preloadingManager.onLoad = () => {
+
+            this.preloadedGLBsDone = true;
+
+            if (this._preloadFinishedCallback != null) {
+                this._preloadFinishedCallback();
+            }
+        }
+
+        this.preloadingManager.onError = (url) => {
+            console.error('Error loading:', url);
+        };
+
+
+        this.loadingManager = new THREE.LoadingManager();
+        this.loadingManager.onLoad = () => {
+            this.onLoadingManagerLoad()
+        }
+
+        this.loadingManager.onError = (url) => {
+            console.error('Error loading:', url);
+        };
+
+    }
+
+    setupRaycasters(){
+        this.raycaster = new THREE.Raycaster();
+        this.raycaster.layers.set(0);
+        this.pointer = new THREE.Vector2();
+        this.pointerDelta = new THREE.Vector2();
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.previousPointer = new THREE.Vector2();
+        this.delta = 0
+        this.currentFrameTime = 0
+        this.timer = new THREE.Timer();
+        this.timer.connect(document);
+        this.worldPosition = new THREE.Vector3()
+    }
+
+    setupStats(){
+        this.stats = new Stats();
+        document.body.appendChild(this.stats.dom);
+        this.stats.dom.style.display = 'none'
+    }
 
     async init() {
+        await this.loadThree()
+        await this.loadAdditionalThreeAddons()
+
         const jsPsychVersion = globalSettings.jsPsychVersion
         const jsPsychPlugins = globalSettings.jsPychPlugins
         const defaultJsPychPlugins = globalSettings.defaultJsPychPlugins
+        const includePhysics = globalSettings.includePhysics
         const jsPsychPluginsToLoad = []
         const librariesToLoad = []
         const cssToLoad = []
@@ -439,10 +551,21 @@ class InteractiveSearchToolbox {
         for (const url of jsPsychPluginsToLoad) {
             librariesToLoad.push("https://unpkg.com/@jspsych/" + url)
         }
+
         console.log(librariesToLoad)
 
         try {
             await this.loadScriptsSequentially(librariesToLoad);
+
+            if (includePhysics) {
+                const rapierVersion = "0.19.3"
+                const rapierUrl = `https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@${rapierVersion}/+esm`
+
+                const RAPIER = await import(/* @vite-ignore */ rapierUrl);
+                await RAPIER.init();
+                window.RAPIER = RAPIER;
+            }
+
             this.setupToolbox();
         } catch (error) {
             console.error('Failed to load required scripts:', error);
@@ -569,6 +692,80 @@ class InteractiveSearchToolbox {
 
     setupToolbox() {
         // Create and setup global scene object
+        xAxis = new THREE.Vector3(1, 0, 0)
+        yAxis = new THREE.Vector3(0, 1, 0)
+        zAxis = new THREE.Vector3(0, 1, 0)
+        worldPointer = new THREE.Vector3(0, 0, 0.5);
+        distance_vector = new THREE.Vector3(0, 0, 0)
+        worldPos = new THREE.Vector3();
+
+        MaskShader = {
+            uniforms: {
+                "tDiffuse": { value: null },  // the blurred scene (current pass input)
+                "tSharp": { value: null },    // the original sharp scene
+                "mouse": { value: new THREE.Vector2(0.5, 0.5) },
+                "aspect": { value: window.innerWidth / window.innerHeight },
+                "radius": { value: 0.15 },
+                "softness": { value: 0.1 },
+                "maskType": { value: 0 },     // 0 = blur, 1 = solid/transparent color
+                "maskColor": { value: new THREE.Color(0x000000) },
+                "maskAlpha": { value: 0.7 },  // 1.0 = fully opaque, < 1.0 = transparent tint
+            },
+            vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+            fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform sampler2D tSharp;
+        uniform vec2 mouse;
+        uniform float aspect;
+        uniform float radius;
+        uniform float softness;
+        uniform int maskType;
+        uniform vec3 maskColor;
+        uniform float maskAlpha;
+        varying vec2 vUv;
+
+        void main() {
+            vec4 blurred = texture2D(tDiffuse, vUv);
+            vec4 sharp = texture2D(tSharp, vUv);
+
+            // Aspect corrected distance from mouse
+            vec2 uv = vUv;
+            vec2 m = mouse;
+            uv.x *= aspect;
+            m.x *= aspect;
+            float dist = distance(uv, m);
+
+            // 1.0 inside circle, 0.0 outside
+            float inside = smoothstep(radius, radius - softness, dist);
+
+            vec3 outside;
+
+            if (maskType == 0) {
+                // Blur: outside is blurred scene
+                outside = blurred.rgb;
+            } else {
+                // Color: outside is a mix of the sharp scene and the mask color.
+                // If maskAlpha is 1.0, this becomes 100% maskColor (Opaque).
+                // If maskAlpha is 0.5, this becomes a 50% tinted overlay (Transparent).
+                outside = mix(sharp.rgb, maskColor, maskAlpha);
+            }
+
+            // Inside the circle always shows the sharp scene
+            gl_FragColor = vec4(mix(outside, sharp.rgb, inside), sharp.a);
+        }
+    `
+        };
+
+        this.setupLoadingManagers()
+        this.setupRaycasters()
+        this.setupStats()
+
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.backgroundColor);
         if (globalSettings.enableAmbientLighting == true) {
@@ -713,7 +910,7 @@ class InteractiveSearchToolbox {
 
         // Attach other libraries as global objects 
         window.THREE = THREE
-        
+
         window.jsPsych = initJsPsych({
             on_trial_start: (trial) => {
                 this.jsPsychRunning = true;
@@ -1340,8 +1537,8 @@ class InteractiveSearchToolbox {
         }
 
         const gridObject = { positions: positions, nextEmptyPosition: nextEmptyPosition, debugGrid: debugGrid, rows: settings.rows, columns: settings.columns }
-        
-        if (settings.showDebugGrid == true) { 
+
+        if (settings.showDebugGrid == true) {
             this.scene.add(gridObject.debugGrid)
         }
 
@@ -1429,7 +1626,7 @@ class InteractiveSearchToolbox {
             //parentObj.add(object)
         });
 
-        if (settings.showDebugGrid == true) { 
+        if (settings.showDebugGrid == true) {
             this.scene.add(settings.gridObject.debugGrid)
         }
 
@@ -1835,16 +2032,16 @@ class InteractiveSearchToolbox {
         this.interactionData["SCENE_INFO"].push(this.currentSceneInfo)
         this.interactionData["INTERACTION_DATA"].push(this.singleTrialInteractionData)
 
-        if(clearScene){
+        if (clearScene) {
             this.stimuliInScene.forEach(object => {
                 this.removeStimulusFromScene(object)
             });
         }
-        
-        if(globalSettings.autoHideCanvas){
+
+        if (globalSettings.autoHideCanvas) {
             this.interactiveCanvas.style.display = 'none'
         }
-        
+
 
         this.currentTrialIndex++;
 
@@ -2136,8 +2333,8 @@ class InteractiveSearchToolbox {
                         z: child.quaternion.z,
                         w: child.quaternion.w
                     },
-                    TRUE_ROTATION:{
-                        y:child.material.rotation
+                    TRUE_ROTATION: {
+                        y: child.material.rotation
                     }
                 }
                 SCENE_INFO.push(jsonInfo);
