@@ -1,6 +1,6 @@
-# InteractiveSearchToolbox
+![logo](Logos/LogoTitleBottom.svg)
 The Interactive Search Toolbox is a JavaScript library for creating and running computer-based interactive search experiments. The toolbox works in tandem with the open-source JavaScript libraries [Three.js](https://threejs.org/), [jsPsych](https://www.jspsych.org/latest/), and [lodash](https://lodash.com/) to simplify creating virtual interactive search experiments capable of recording and storing large quantities of moment-to-moment interactive data packaged into standard experimental psychology frameworks. 
-![logo](IST.svg)
+
 
 ## Installation
 Option 1 - Include library and css sheet via CDN.
@@ -98,15 +98,3 @@ For instructions on how to use RapierJS, visit their documentation site [here](h
 
 ## Guides
 Basics and tutorials [here](https://hjgodwin.github.io/searchLab/istguide/).
-
-
-## License
-The MIT License (MIT)
-
-Copyright (c) 2026 Haden Dewis
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
