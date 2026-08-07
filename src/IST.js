@@ -1,7 +1,7 @@
 
 
 //import 'jspsych/css/jspsych.css'
-import './style.css'
+//import './style.css'
 
 /*
 import { initJsPsych } from "jspsych"
@@ -33,12 +33,12 @@ import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectio
 import _, { forEach } from "lodash";
 
 let globalSettings
-let xAxis// = new THREE.Vector3(1, 0, 0)
-let yAxis// = new THREE.Vector3(0, 1, 0)
-let zAxis// = new THREE.Vector3(0, 1, 0)
-let worldPointer// = new THREE.Vector3(0, 0, 0.5);
-let distance_vector// = new THREE.Vector3(0, 0, 0)
-let worldPos //= new THREE.Vector3();
+let xAxis
+let yAxis
+let zAxis
+let worldPointer
+let distance_vector
+let worldPos
 
 let warningBox;
 let warningBoxText;
@@ -130,69 +130,7 @@ class ExperimentClock {
     }
 }
 
-let MaskShader/* = {
-    uniforms: {
-        "tDiffuse": { value: null },  // the blurred scene (current pass input)
-        "tSharp": { value: null },    // the original sharp scene
-        "mouse": { value: new THREE.Vector2(0.5, 0.5) },
-        "aspect": { value: window.innerWidth / window.innerHeight },
-        "radius": { value: 0.15 },
-        "softness": { value: 0.1 },
-        "maskType": { value: 0 },     // 0 = blur, 1 = solid/transparent color
-        "maskColor": { value: new THREE.Color(0x000000) },
-        "maskAlpha": { value: 0.7 },  // 1.0 = fully opaque, < 1.0 = transparent tint
-    },
-    vertexShader: `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        uniform sampler2D tDiffuse;
-        uniform sampler2D tSharp;
-        uniform vec2 mouse;
-        uniform float aspect;
-        uniform float radius;
-        uniform float softness;
-        uniform int maskType;
-        uniform vec3 maskColor;
-        uniform float maskAlpha;
-        varying vec2 vUv;
-
-        void main() {
-            vec4 blurred = texture2D(tDiffuse, vUv);
-            vec4 sharp = texture2D(tSharp, vUv);
-
-            // Aspect corrected distance from mouse
-            vec2 uv = vUv;
-            vec2 m = mouse;
-            uv.x *= aspect;
-            m.x *= aspect;
-            float dist = distance(uv, m);
-
-            // 1.0 inside circle, 0.0 outside
-            float inside = smoothstep(radius, radius - softness, dist);
-
-            vec3 outside;
-
-            if (maskType == 0) {
-                // Blur: outside is blurred scene
-                outside = blurred.rgb;
-            } else {
-                // Color: outside is a mix of the sharp scene and the mask color.
-                // If maskAlpha is 1.0, this becomes 100% maskColor (Opaque).
-                // If maskAlpha is 0.5, this becomes a 50% tinted overlay (Transparent).
-                outside = mix(sharp.rgb, maskColor, maskAlpha);
-            }
-
-            // Inside the circle always shows the sharp scene
-            gl_FragColor = vec4(mix(outside, sharp.rgb, inside), sharp.a);
-        }
-    `
-};
-*/
+let MaskShader;
 
 class InteractiveSearchToolbox {
     constructor(userSettings = null) {
@@ -200,11 +138,12 @@ class InteractiveSearchToolbox {
         // Default settings
         globalSettings = {
             enableAmbientLighting: false,
+            backgroundColour: null,
             responsiveDisplaySize: true,
             enableHDRI: false,
             autoHideCanvas: true,
             threeJSVersion: "latest",
-            threeAddons:[],//["TransformControls","three/addons/controls/TransformControls.js"]
+            threeAddons:[],
             jsPsychVersion: "",
             jsPychPlugins: [],
             defaultJsPychPlugins: ["plugin-instructions", "plugin-canvas-keyboard-response", "plugin-canvas-button-response", "plugin-html-keyboard-response", "plugin-html-button-response"],
@@ -220,14 +159,19 @@ class InteractiveSearchToolbox {
         }
 
         this.preloadingManager;
-
         this.loadingManager; 
 
         this.loadedModels = [];
         this.loadedTextures = [];
         this.loadedEnvs = [];
         this.loadingScreen;
-        this.backgroundColor = '#c7c7c7';
+
+        if(globalSettings.backgroundColour){
+            this.backgroundColour = globalSettings.backgroundColour;
+        }else{
+            this.backgroundColour = '#c7c7c7';
+        }
+        
 
 
         this.scene;
@@ -257,31 +201,24 @@ class InteractiveSearchToolbox {
 
 
         // Interaction Controls variables
-        this.raycaster// = new THREE.Raycaster();
-        //this.raycaster.layers.set(0);
-        this.pointer// = new THREE.Vector2();
-        this.pointerDelta// = new THREE.Vector2();
+        this.raycaster
+        this.pointer
+        this.pointerDelta
         this.mouseX = 0;
         this.mouseY = 0;
-        this.previousPointer// = new THREE.Vector2();
+        this.previousPointer
         this.delta = 0
         this.currentFrameTime = 0
-        this.timer// = new THREE.Timer();
-        //this.timer.connect(document);
+        this.timer
 
         this.experimentClock = new ExperimentClock()
 
-        this.worldPosition// = new THREE.Vector3()
-        //this.zOffset = 5
-        //this.zTarget = new THREE.Vector3()
+        this.worldPosition
         this.pointerDown = false;
         this.pointerUp = true;
         this.currentRaycastObject = null;
         this.checkStats = false
-        //this.debugCube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1),new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
 
-
-        //this.orbitControls;
         this.dragToRotateEnabled = false
         this.orbitControlsEnabled = false
         this.dragControlsEnabled = false
@@ -291,7 +228,6 @@ class InteractiveSearchToolbox {
         this.currentControls = null
         this.isOrbiting = false
         this.isPivoting = false
-
 
         this.maskControls;
         this.maskPlane;
@@ -329,10 +265,7 @@ class InteractiveSearchToolbox {
         document.body.style.margin = "0";
 
         this.setupLoadingScreen();
-        //this.turnOnLoadingScreen();
-
         this.setupWarningMessage();
-        //this.setupToolbox();
     }
 
     async loadScript(url) {
@@ -419,8 +352,6 @@ class InteractiveSearchToolbox {
         window.HorizontalBlurShader = HorizontalBlurShader
         window.VerticalBlurShader = VerticalBlurShader
         window.GammaCorrectionShader = GammaCorrectionShader
-
-        
     }
 
     async loadAdditionalThreeAddons(){
@@ -431,8 +362,6 @@ class InteractiveSearchToolbox {
                 const globalName = module[0];
                 const importPath = module[1];
                 const importedModule = await import(/* @vite-ignore */ importPath)
-                console.log(module)
-                console.log(importedModule)
 
                 // Prefer a named export matching globalName; fall back to default
                 window[globalName] = importedModule[globalName] ?? importedModule.default
@@ -442,7 +371,6 @@ class InteractiveSearchToolbox {
                 }
             }
         }
-
     }
 
     setupLoadingManagers(){
@@ -495,8 +423,18 @@ class InteractiveSearchToolbox {
     }
 
     async init() {
-        await this.loadThree()
-        await this.loadAdditionalThreeAddons()
+        this.turnOnLoadingScreen("Loading, please wait...")
+
+        try {
+            await this.loadThree()
+            await this.loadAdditionalThreeAddons()
+        }catch (error){
+            console.error('Failed to load three/three addons:', error);
+            alert('Oops, something has gone wrong! Please try to reload the page.');
+            this.turnOffLoadingScreen()
+            throw error; // stops the module here instead of returning
+        }
+        
 
         const jsPsychVersion = globalSettings.jsPsychVersion
         const jsPsychPlugins = globalSettings.jsPychPlugins
@@ -552,14 +490,13 @@ class InteractiveSearchToolbox {
             librariesToLoad.push("https://unpkg.com/@jspsych/" + url)
         }
 
-        console.log(librariesToLoad)
 
         try {
             await this.loadScriptsSequentially(librariesToLoad);
 
             if (includePhysics) {
-                const rapierVersion = "0.19.3"
-                const rapierUrl = `https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@${rapierVersion}/+esm`
+                //const rapierVersion = "0.19.3"
+                const rapierUrl = `https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat/+esm`
 
                 const RAPIER = await import(/* @vite-ignore */ rapierUrl);
                 await RAPIER.init();
@@ -570,6 +507,7 @@ class InteractiveSearchToolbox {
         } catch (error) {
             console.error('Failed to load required scripts:', error);
             alert('Oops, something has gone wrong! Please try to reload the page.');
+            this.turnOffLoadingScreen()
             throw error; // stops the module here instead of returning
         }
 
@@ -767,7 +705,7 @@ class InteractiveSearchToolbox {
         this.setupStats()
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(this.backgroundColor);
+        this.scene.background = new THREE.Color(this.backgroundColour);
         if (globalSettings.enableAmbientLighting == true) {
             this.ambientLight = new THREE.AmbientLight(0x404040, 35); // soft white light
             this.scene.add(this.ambientLight);
@@ -917,14 +855,9 @@ class InteractiveSearchToolbox {
             }
         });
 
-        /*window.canvasKeyboardResponse = canvasKeyboardResponse
-        window.canvasButtonResponse = canvasButtonResponse
-        window.htmlKeyboardResponse = htmlKeyboardResponse
-        window.htmlButtonResponse = htmlButtonResponse
-        window.instructions = instructions*/
         window._ = _
 
-
+        this.turnOffLoadingScreen()
     }
 
     onPointerMove(callback) {
@@ -1185,7 +1118,7 @@ class InteractiveSearchToolbox {
         this.loadingScreen.style.width = '100vw';
         this.loadingScreen.style.zIndex = '1000';
         this.loadingScreen.style.height = '100vh';
-        this.loadingScreen.style.backgroundColor = this.backgroundColor;
+        this.loadingScreen.style.backgroundColor = this.backgroundColour;
         this.loadingScreen.style.alignItems = 'center';
         this.loadingScreen.style.justifyContent = 'center';
 
@@ -3111,14 +3044,14 @@ class InteractiveSearchToolbox {
         warningBox.style.position = 'fixed';
         warningBox.style.top = '0';
         warningBox.style.left = '0';
-        warningBox.style.backgroundColor = 'rgba(0, 0, 0, 0.14)';
+        warningBox.style.backgroundColour = 'rgba(0, 0, 0, 0.14)';
         warningBox.style.zIndex = '2000';
         warningBox.style.display = 'none';
         warningBox.style.backdropFilter = 'blur(5px)';
 
         // Create the actual warning box
         warningBoxText = document.createElement('div');
-        warningBoxText.style.backgroundColor = '#fff3cd';
+        warningBoxText.style.backgroundColour = '#fff3cd';
         warningBoxText.style.color = '#856404';
         warningBoxText.style.border = '1px solid #ffeeba';
         warningBoxText.style.padding = '10px 20px';
@@ -3138,7 +3071,7 @@ class InteractiveSearchToolbox {
         // Add close button
         const closeBtn = document.createElement('button');
         closeBtn.textContent = 'Close';
-        closeBtn.style.backgroundColor = '#856404';
+        closeBtn.style.backgroundColour = '#856404';
         closeBtn.style.color = '#fff';
         closeBtn.style.border = 'none';
         closeBtn.style.borderRadius = '6px';
@@ -3149,10 +3082,10 @@ class InteractiveSearchToolbox {
 
         // Optional hover/focus effects
         closeBtn.addEventListener('mouseenter', () => {
-            closeBtn.style.backgroundColor = '#b5880d';
+            closeBtn.style.backgroundColour = '#b5880d';
         });
         closeBtn.addEventListener('mouseleave', () => {
-            closeBtn.style.backgroundColor = '#856404';
+            closeBtn.style.backgroundColour = '#856404';
         });
         closeBtn.addEventListener('mousedown', () => {
             closeBtn.style.transform = 'scale(0.95)';

@@ -8,13 +8,11 @@ Option 1 - Include library and css sheet via CDN.
 ```html
 <head>
     <script src="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.css" rel="stylesheet" type="text/css"/>
 </head>
 ```
 
-Option 2 - Download files to local directory and include these within your own project
+Option 2 - Download file to local directory and include within your own project
 - IST - [download here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js)
-- IST CSS - [download here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.css)
 
 ## Usage
 Add the class into your project once at the top of your javascript file and initiate it using ```init()```.
