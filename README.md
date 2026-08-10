@@ -53,7 +53,7 @@ const IST = new InteractiveSearchToolbox({
 await IST.init()
 ```
 
-## I want to use other jsPsych Plugins
+## I want to use other jsPsych Plugins?
 The IST comes with several jsPsych plugins included as default but if you need more you can simply add them via the ```jsPsychPlugins``` setting.
 
 ```js
