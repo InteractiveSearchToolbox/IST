@@ -4,7 +4,7 @@ The Interactive Search Toolbox is a JavaScript library for creating and running 
 
 
 ## Installation
-Option 1 - Include library and css sheet via CDN.
+Option 1 - Include library via CDN.
 ```html
 <head>
     <script src="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js"></script>
@@ -12,12 +12,12 @@ Option 1 - Include library and css sheet via CDN.
 ```
 
 Option 2 - Download file to local directory and include within your own project
-- IST - [download here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js)
+- [Download here](https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST/build/IST.min.js)
 
 ## Usage
 Add the class into your project once at the top of your javascript file and initiate it using ```init()```.
 
-The IST dynamically imports other libraries at run time. As such, you must wait for ```init()``` to complete.
+The IST dynamically imports the required dependencies at run time. As such, you must wait for ```init()``` to complete.
 There are two ways to do this. 
 - Option 1: use the ```await``` keyword 
 ```js
