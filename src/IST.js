@@ -1,35 +1,3 @@
-
-
-//import 'jspsych/css/jspsych.css'
-//import './style.css'
-
-/*
-import { initJsPsych } from "jspsych"
-import instructions from "@jspsych/plugin-instructions"
-import canvasKeyboardResponse from "@jspsych/plugin-canvas-keyboard-response"
-import canvasButtonResponse from "@jspsych/plugin-canvas-button-response"
-import htmlKeyboardResponse from "@jspsych/plugin-html-keyboard-response"
-import htmlButtonResponse from "@jspsych/plugin-html-button-response"
-*/
-
-
-
-/*
-import * as THREE from 'three';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-
-
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
-import { HorizontalBlurShader } from 'three/examples/jsm/shaders/HorizontalBlurShader.js'
-import { VerticalBlurShader } from 'three/examples/jsm/shaders/VerticalBlurShader.js'
-import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
-*/
-
 import _, { forEach } from "lodash";
 
 let globalSettings
@@ -39,10 +7,13 @@ let zAxis
 let worldPointer
 let distance_vector
 let worldPos
+let canvasRect
 
 let warningBox;
 let warningBoxText;
 let warningMessageText;
+
+let MaskShader;
 
 let materialTypes = ['blur', 'opaque', 'transparent']
 
@@ -130,7 +101,7 @@ class ExperimentClock {
     }
 }
 
-let MaskShader;
+
 
 class InteractiveSearchToolbox {
     constructor(userSettings = null) {
@@ -448,7 +419,7 @@ class InteractiveSearchToolbox {
             librariesToLoad.push("https://unpkg.com/jspsych@" + jsPsychVersion)
             librariesToLoad.push("https://unpkg.com/jspsych@" + jsPsychVersion + "/css/jspsych.css")
         } else {
-            librariesToLoad.push("https://unpkg.com/jspsych") // Default is latest
+            librariesToLoad.push("https://unpkg.com/jspsych")
             librariesToLoad.push("https://unpkg.com/jspsych@latest/css/jspsych.css")
         }
 
@@ -469,12 +440,12 @@ class InteractiveSearchToolbox {
                     isInDefaults = true
                     // Check if they added a version number else
                     if (url.includes("@")) {
-                        console.log('User included version number, we use this instead')
+                        console.log('Included version number, overriding default')
 
                         // Remove previous and use this instead
                         jsPsychPluginsToLoad[i] = url
                     } else {
-                        console.log('User did not include version number, sticking with default')
+                        console.log('No version number, sticking with default')
                     }
 
                 }
@@ -495,7 +466,6 @@ class InteractiveSearchToolbox {
             await this.loadScriptsSequentially(librariesToLoad);
 
             if (includePhysics) {
-                //const rapierVersion = "0.19.3"
                 const rapierUrl = `https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat/+esm`
 
                 const RAPIER = await import(/* @vite-ignore */ rapierUrl);
@@ -510,13 +480,7 @@ class InteractiveSearchToolbox {
             this.turnOffLoadingScreen()
             throw error; // stops the module here instead of returning
         }
-
-
-
-
     }
-
-
 
     onPreloadFinished(callback) {
         // Users manually update this in their own code.
@@ -742,13 +706,30 @@ class InteractiveSearchToolbox {
 
         // Create pointer to the canvas threejs uses.
         this.interactiveCanvas = this.renderer.domElement;
+        this.resize()
         this.interactiveCanvas.style.display = 'none';
+
+
+        //canvasRect = this.interactiveCanvas.getBoundingClientRect();
+
+        const updateCanvasRect = () => {
+            canvasRect = this.interactiveCanvas.getBoundingClientRect();
+            //console.log('here')
+        };
 
         // Setup responsive display 
         if (globalSettings.responsiveDisplaySize == true) {
-            window.addEventListener('resize', () => {
-                const w = window.innerWidth;
-                const h = window.innerHeight;
+            window.addEventListener('resize', (event) => {
+                this.resize();
+            })
+            //window.addEventListener('resize', updateCanvasRect);
+            
+            /*window.addEventListener('resize', () => {
+                //const w = window.innerWidth;
+                //const h = window.innerHeight;
+                const w = this.interactiveCanvas.clientWidth;
+                const h = this.interactiveCanvas.clientHeight;
+                console.log(w,h)
                 this.renderer.setSize(w, h);
                 this.camera.aspect = w / h;
                 this.camera.updateProjectionMatrix();
@@ -765,7 +746,7 @@ class InteractiveSearchToolbox {
                         this.mainComposer.setSize(w, h);
                     }
                 }
-            });
+            });*/
         }
 
         // Setup pointer events
@@ -805,13 +786,23 @@ class InteractiveSearchToolbox {
             this._pointerUpCallback?.(event);
         });
 
+        
+        
+        
+        
+
         // When the cursor is moved
         window.addEventListener('pointermove', (event) => {
 
             // calculate pointer position in normalized device coordinates
             // (-1 to +1) for both components
-            this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-            this.pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+            //this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            //this.pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+            const rect = canvasRect;
+            //console.log(rect)
+            this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
             this.mouseX = event.clientX;
             this.mouseY = event.clientY;
@@ -857,7 +848,54 @@ class InteractiveSearchToolbox {
 
         window._ = _
 
+        
         this.turnOffLoadingScreen()
+    }
+
+    resize(){
+        const parent = this.interactiveCanvas.parentElement;
+            const usingDefaultBody = !parent || parent === document.body;
+
+            let w, h;
+
+            if (usingDefaultBody) {
+                // Canvas hasn't been moved into a custom container — track the window.
+                w = window.innerWidth;
+                h = window.innerHeight;
+            } else {
+                w = parent.clientWidth;
+                h = parent.clientHeight;
+
+                // Safety net: custom container exists but has no independent size
+                // (e.g. user forgot to give it width/height in CSS).
+                if (w === 0 || h === 0) {
+                    console.warn('IST: container has zero size, falling back to window dimensions. Give your container an explicit width/height in CSS.');
+                    w = window.innerWidth;
+                    h = window.innerHeight;
+                }
+            }
+
+            this.renderer.setSize(w, h);
+            this.camera.aspect = w / h;
+            this.camera.updateProjectionMatrix();
+
+            if (this.maskControlsEnabled) {
+                if (this.finalPass && this.finalPass.uniforms.aspect) {
+                    this.finalPass.uniforms.aspect.value = w / h;
+                }
+                if (this.sharpRT) {
+                    this.sharpRT.setSize(w, h);
+                }
+                if (this.mainComposer) {
+                    this.mainComposer.setSize(w, h);
+                }
+            }
+
+            canvasRect = this.interactiveCanvas.getBoundingClientRect();
+    }
+
+    updateCanvasSize(){
+
     }
 
     onPointerMove(callback) {
@@ -1300,7 +1338,7 @@ class InteractiveSearchToolbox {
                 const y = totalGridHeight / 2 - row * (settings.itemHeight + settings.distanceBetween) - settings.itemHeight / 2;
 
                 // Apply the jitter (scaled to object size and randomly picks direction)
-                let jitter = (settings.jitter * trueArea) * _.sample([-1, 1])
+                let jitter = (settings.jitter) * _.sample([-1, 1])
 
                 // Calculate the position and create debug geometry
                 let position = new THREE.Vector3(x + jitter, y + jitter, 0)
@@ -1435,7 +1473,7 @@ class InteractiveSearchToolbox {
                 const y = totalGridHeight / 2 - row * (settings.itemHeight + settings.distanceBetween) - settings.itemHeight / 2;
 
                 // Apply the jitter (scaled to object size and randomly picks direction)
-                let jitter = (settings.jitter * trueArea) * _.sample([-1, 1])
+                let jitter = (settings.jitter) * _.sample([-1, 1])
 
                 // Calculate the position and create debug geometry
                 let position = new THREE.Vector3(x + jitter, y + jitter, 0)
@@ -1523,8 +1561,6 @@ class InteractiveSearchToolbox {
         if (settings.gridObject == null) {
             settings.gridObject = this.calculateGridPositionsInternal(settings)
         }
-
-        console.log(settings)
 
 
         if (objectsToPlace.length > settings.gridObject.positions.length) {
@@ -1975,15 +2011,13 @@ class InteractiveSearchToolbox {
             this.interactiveCanvas.style.display = 'none'
         }
 
-
-        this.currentTrialIndex++;
-
         if (this.jsPsychRunning) {
             this.getCurrentTrialData_JSPsych().IST_TRIAL_INDEX = this.currentTrialIndex
             const jspsychData = this.getBehaviouralData()
             this.addGlobalData("JS_PSYCH_DATA", jspsychData, { stringify: false })
         }
 
+        this.currentTrialIndex++;
     }
 
     getCurrentTrialData_JSPsych() {
@@ -2366,6 +2400,7 @@ class InteractiveSearchToolbox {
         this.startAnimationLoop();
         this.currentSceneInfo = this.getSceneData()
         this.interactiveCanvas.style.display = 'flex'
+        this.resize();
     }
 
     enableOrbitControls() {
@@ -2503,8 +2538,6 @@ class InteractiveSearchToolbox {
 
         this.currentControls = 'MASK'
         this.maskControlsEnabled = true;
-
-        console.log(this.maskControls)
     }
 
     setupMask(controlSettings) {
@@ -3034,83 +3067,85 @@ class InteractiveSearchToolbox {
 
 
     setupWarningMessage() {
-        // Create overlay container
-        warningBox = document.createElement('div');
-        warningBox.style.display = 'flex';
-        warningBox.style.justifyContent = 'center';
-        warningBox.style.alignItems = 'center';
-        warningBox.style.width = '100vw';
-        warningBox.style.height = '100vh';
-        warningBox.style.position = 'fixed';
-        warningBox.style.top = '0';
-        warningBox.style.left = '0';
-        warningBox.style.backgroundColour = 'rgba(0, 0, 0, 0.14)';
-        warningBox.style.zIndex = '2000';
+    // Create overlay container
+    warningBox = document.createElement('div');
+    warningBox.style.display = 'flex';
+    warningBox.style.justifyContent = 'center';
+    warningBox.style.alignItems = 'center';
+    warningBox.style.width = '100vw';
+    warningBox.style.height = '100vh';
+    warningBox.style.position = 'fixed';
+    warningBox.style.top = '0';
+    warningBox.style.left = '0';
+    warningBox.style.backgroundColor = 'rgba(0, 0, 0, 0.55)';
+    warningBox.style.zIndex = '2000';
+    warningBox.style.display = 'none';
+    warningBox.style.backdropFilter = 'blur(6px)';
+
+    // Create the actual warning box
+    warningBoxText = document.createElement('div');
+    warningBoxText.style.backgroundColor = '#1f1f24';
+    warningBoxText.style.color = '#f0c542';
+    warningBoxText.style.border = '1px solid #3a3a42';
+    warningBoxText.style.padding = '16px 24px';
+    warningBoxText.style.borderRadius = '10px';
+    warningBoxText.style.boxShadow = '0 8px 24px rgba(0,0,0,0.5)';
+    warningBoxText.style.display = 'flex';
+    warningBoxText.style.alignItems = 'center';
+    warningBoxText.style.gap = '14px';
+    warningBoxText.style.fontSize = '16px';
+    warningBoxText.style.flexDirection = 'column';
+
+    // Create text element (this is what you'll update later)
+    warningMessageText = document.createElement('span');
+    warningMessageText.style.whiteSpace = 'pre-line';
+    warningMessageText.style.textAlign = 'center';
+    warningMessageText.style.color = '#e8e8ea';
+
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Close';
+    closeBtn.style.backgroundColor = '#f0c542';
+    closeBtn.style.color = '#1f1f24';
+    closeBtn.style.border = 'none';
+    closeBtn.style.borderRadius = '6px';
+    closeBtn.style.padding = '6px 16px';
+    closeBtn.style.fontSize = '16px';
+    closeBtn.style.fontWeight = '600';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.transition = 'background-color 0.2s ease, transform 0.1s ease';
+
+    // Optional hover/focus effects
+    closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.backgroundColor = '#ffd766';
+    });
+    closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.backgroundColor = '#f0c542';
+    });
+    closeBtn.addEventListener('mousedown', () => {
+        closeBtn.style.transform = 'scale(0.95)';
+    });
+    closeBtn.addEventListener('mouseup', () => {
+        closeBtn.style.transform = 'scale(1)';
+    });
+    closeBtn.addEventListener('focus', () => {
+        closeBtn.style.outline = '2px solid #ffd766';
+    });
+    closeBtn.addEventListener('blur', () => {
+        closeBtn.style.outline = 'none';
+    });
+
+    // Close button functionality
+    closeBtn.addEventListener('click', () => {
         warningBox.style.display = 'none';
-        warningBox.style.backdropFilter = 'blur(5px)';
+    });
 
-        // Create the actual warning box
-        warningBoxText = document.createElement('div');
-        warningBoxText.style.backgroundColour = '#fff3cd';
-        warningBoxText.style.color = '#856404';
-        warningBoxText.style.border = '1px solid #ffeeba';
-        warningBoxText.style.padding = '10px 20px';
-        warningBoxText.style.borderRadius = '6px';
-        warningBoxText.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
-        warningBoxText.style.display = 'flex';
-        warningBoxText.style.alignItems = 'center';
-        warningBoxText.style.gap = '10px';
-        warningBoxText.style.fontSize = '16px';
-        warningBoxText.style.flexDirection = 'column';
-
-        // Create text element (this is what you’ll update later)
-        warningMessageText = document.createElement('span');
-        warningMessageText.style.whiteSpace = 'pre-line';
-        warningMessageText.style.textAlign = 'center';
-
-        // Add close button
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Close';
-        closeBtn.style.backgroundColour = '#856404';
-        closeBtn.style.color = '#fff';
-        closeBtn.style.border = 'none';
-        closeBtn.style.borderRadius = '6px';
-        closeBtn.style.padding = '6px 12px';
-        closeBtn.style.fontSize = '16px';
-        closeBtn.style.cursor = 'pointer';
-        closeBtn.style.transition = 'background-color 0.2s ease, transform 0.1s ease';
-
-        // Optional hover/focus effects
-        closeBtn.addEventListener('mouseenter', () => {
-            closeBtn.style.backgroundColour = '#b5880d';
-        });
-        closeBtn.addEventListener('mouseleave', () => {
-            closeBtn.style.backgroundColour = '#856404';
-        });
-        closeBtn.addEventListener('mousedown', () => {
-            closeBtn.style.transform = 'scale(0.95)';
-        });
-        closeBtn.addEventListener('mouseup', () => {
-            closeBtn.style.transform = 'scale(1)';
-        });
-        closeBtn.addEventListener('focus', () => {
-            closeBtn.style.outline = '2px solid #b5880d';
-        });
-        closeBtn.addEventListener('blur', () => {
-            closeBtn.style.outline = 'none';
-        });
-
-        // Close button functionality
-        closeBtn.addEventListener('click', () => {
-            warningBox.style.display = 'none';
-        });
-
-        // Put everything together
-        warningBoxText.appendChild(warningMessageText);
-        warningBoxText.appendChild(closeBtn);
-        warningBox.appendChild(warningBoxText);
-        document.body.appendChild(warningBox);
-    }
+    // Put everything together
+    warningBoxText.appendChild(warningMessageText);
+    warningBoxText.appendChild(closeBtn);
+    warningBox.appendChild(warningBoxText);
+    document.body.appendChild(warningBox);
+}
 
     warningMessage(textToDisplay) {
         warningMessageText.textContent = textToDisplay;
@@ -3121,7 +3156,7 @@ class InteractiveSearchToolbox {
         this.maskControls.scale.set(size, size, size)
     }
 
-    setMaskType(type) {
+    /*setMaskType(type) {
         if (!materialTypes.includes(type)) {
             console.warn(
                 `'${type}' is not a mask type. Please choose from the following types: ${materialTypes.toString()}`
@@ -3140,8 +3175,9 @@ class InteractiveSearchToolbox {
                     break
             }
         }
-    }
+    }*/
 
+        /*
     setMaskColourOld(hexColour = null) {
         if (hexColour == null) {
             console.warn('Please provide a hex string')
@@ -3154,7 +3190,7 @@ class InteractiveSearchToolbox {
             }
         }
     }
-
+        */
     setOverallDragToRotateSensitivity(value) {
         if (!isNaN(value)) {
             this.dragToRotateSensitivity = value

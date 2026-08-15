@@ -149,7 +149,7 @@ IST.onPreloadFinished(function () {
         // Finally, add the stimuli to the scene using IST.placeInConcentricRings()
         if (trial_type.includes("INNER")) {
             IST.placeInConcentricRings({
-                stimuli: trial_stimuli, // Stimuli we fetched earlier
+                objectsToPlace: trial_stimuli, // Stimuli we fetched earlier
                 totalRingSections: 8,
                 totalRings: 2,
                 ringToUse: 0, // Use the inner ring
@@ -158,7 +158,7 @@ IST.onPreloadFinished(function () {
             })
         } else {
             IST.placeInConcentricRings({
-                stimuli: trial_stimuli, // Stimuli we fetched earlier
+                objectsToPlace: trial_stimuli, // Stimuli we fetched earlier
                 totalRingSections: 8,
                 totalRings: 2,
                 ringToUse: 1, // Use the outer ring
