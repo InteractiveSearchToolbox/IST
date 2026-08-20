@@ -114,7 +114,7 @@ class InteractiveSearchToolbox {
             enableHDRI: false,
             autoHideCanvas: true,
             threeJSVersion: "latest",
-            threeAddons:[],
+            threeAddons: [],
             jsPsychVersion: "",
             jsPychPlugins: [],
             defaultJsPychPlugins: ["plugin-instructions", "plugin-canvas-keyboard-response", "plugin-canvas-button-response", "plugin-html-keyboard-response", "plugin-html-button-response"],
@@ -130,19 +130,19 @@ class InteractiveSearchToolbox {
         }
 
         this.preloadingManager;
-        this.loadingManager; 
+        this.loadingManager;
 
         this.loadedModels = [];
         this.loadedTextures = [];
         this.loadedEnvs = [];
         this.loadingScreen;
 
-        if(globalSettings.backgroundColour){
+        if (globalSettings.backgroundColour) {
             this.backgroundColour = globalSettings.backgroundColour;
-        }else{
+        } else {
             this.backgroundColour = '#c7c7c7';
         }
-        
+
 
 
         this.scene;
@@ -325,10 +325,10 @@ class InteractiveSearchToolbox {
         window.GammaCorrectionShader = GammaCorrectionShader
     }
 
-    async loadAdditionalThreeAddons(){
+    async loadAdditionalThreeAddons() {
         const threeAddons = globalSettings.threeAddons
-        if(threeAddons.length > 0){
-            for(let i = 0; i < threeAddons.length; i++){
+        if (threeAddons.length > 0) {
+            for (let i = 0; i < threeAddons.length; i++) {
                 const module = threeAddons[i]
                 const globalName = module[0];
                 const importPath = module[1];
@@ -344,7 +344,7 @@ class InteractiveSearchToolbox {
         }
     }
 
-    setupLoadingManagers(){
+    setupLoadingManagers() {
         this.preloadingManager = new THREE.LoadingManager();
 
         this.preloadingManager.onLoad = () => {
@@ -372,7 +372,7 @@ class InteractiveSearchToolbox {
 
     }
 
-    setupRaycasters(){
+    setupRaycasters() {
         this.raycaster = new THREE.Raycaster();
         this.raycaster.layers.set(0);
         this.pointer = new THREE.Vector2();
@@ -387,7 +387,7 @@ class InteractiveSearchToolbox {
         this.worldPosition = new THREE.Vector3()
     }
 
-    setupStats(){
+    setupStats() {
         this.stats = new Stats();
         document.body.appendChild(this.stats.dom);
         this.stats.dom.style.display = 'none'
@@ -399,13 +399,13 @@ class InteractiveSearchToolbox {
         try {
             await this.loadThree()
             await this.loadAdditionalThreeAddons()
-        }catch (error){
+        } catch (error) {
             console.error('Failed to load three/three addons:', error);
             alert('Oops, something has gone wrong! Please try to reload the page.');
             this.turnOffLoadingScreen()
             throw error; // stops the module here instead of returning
         }
-        
+
 
         const jsPsychVersion = globalSettings.jsPsychVersion
         const jsPsychPlugins = globalSettings.jsPychPlugins
@@ -723,7 +723,7 @@ class InteractiveSearchToolbox {
                 this.resize();
             })
             //window.addEventListener('resize', updateCanvasRect);
-            
+
             /*window.addEventListener('resize', () => {
                 //const w = window.innerWidth;
                 //const h = window.innerHeight;
@@ -786,10 +786,10 @@ class InteractiveSearchToolbox {
             this._pointerUpCallback?.(event);
         });
 
-        
-        
-        
-        
+
+
+
+
 
         // When the cursor is moved
         window.addEventListener('pointermove', (event) => {
@@ -848,53 +848,74 @@ class InteractiveSearchToolbox {
 
         window._ = _
 
-        
+
         this.turnOffLoadingScreen()
     }
 
-    resize(){
+    resize() {
         const parent = this.interactiveCanvas.parentElement;
-            const usingDefaultBody = !parent || parent === document.body;
+        const usingDefaultBody = !parent || parent === document.body;
 
-            let w, h;
+        let w, h;
 
-            if (usingDefaultBody) {
-                // Canvas hasn't been moved into a custom container — track the window.
+        if (usingDefaultBody) {
+            // Canvas hasn't been moved into a custom container — track the window.
+            w = window.innerWidth;
+            h = window.innerHeight;
+        } else {
+            w = parent.clientWidth;
+            h = parent.clientHeight;
+
+            // Safety net: custom container exists but has no independent size
+            // (e.g. user forgot to give it width/height in CSS).
+            if (w === 0 || h === 0) {
+                console.warn('IST: container has zero size, falling back to window dimensions. Give your container an explicit width/height in CSS.');
                 w = window.innerWidth;
                 h = window.innerHeight;
-            } else {
-                w = parent.clientWidth;
-                h = parent.clientHeight;
+            }
+        }
 
-                // Safety net: custom container exists but has no independent size
-                // (e.g. user forgot to give it width/height in CSS).
-                if (w === 0 || h === 0) {
-                    console.warn('IST: container has zero size, falling back to window dimensions. Give your container an explicit width/height in CSS.');
-                    w = window.innerWidth;
-                    h = window.innerHeight;
-                }
+        this.renderer.setSize(w, h);
+        this.camera.aspect = w / h;
+        this.camera.updateProjectionMatrix();
+
+        if (this.maskControlsEnabled) {
+            if (this.finalPass && this.finalPass.uniforms.aspect) {
+                this.finalPass.uniforms.aspect.value = w / h;
+            }
+            if (this.sharpRT) {
+                this.sharpRT.setSize(w, h);
+            }
+            if (this.mainComposer) {
+                this.mainComposer.setSize(w, h);
             }
 
-            this.renderer.setSize(w, h);
-            this.camera.aspect = w / h;
-            this.camera.updateProjectionMatrix();
-
-            if (this.maskControlsEnabled) {
-                if (this.finalPass && this.finalPass.uniforms.aspect) {
-                    this.finalPass.uniforms.aspect.value = w / h;
-                }
-                if (this.sharpRT) {
-                    this.sharpRT.setSize(w, h);
-                }
-                if (this.mainComposer) {
-                    this.mainComposer.setSize(w, h);
-                }
+            if (this.blurPasses && this.blurPasses.length > 0 && this.maskControls) {
+                const blurIntensity = this.maskControls.blurIntensity;
+                this.blurPasses.forEach(({ hBlurPass, vBlurPass }) => {
+                    hBlurPass.uniforms['h'].value = blurIntensity / w;
+                    vBlurPass.uniforms['v'].value = blurIntensity / h;
+                });
             }
+        }
 
-            canvasRect = this.interactiveCanvas.getBoundingClientRect();
+        /*
+        if (this.maskControlsEnabled) {
+            if (this.finalPass && this.finalPass.uniforms.aspect) {
+                this.finalPass.uniforms.aspect.value = w / h;
+            }
+            if (this.sharpRT) {
+                this.sharpRT.setSize(w, h);
+            }
+            if (this.mainComposer) {
+                this.mainComposer.setSize(w, h);
+            }
+        }*/
+
+        canvasRect = this.interactiveCanvas.getBoundingClientRect();
     }
 
-    updateCanvasSize(){
+    updateCanvasSize() {
 
     }
 
@@ -1083,6 +1104,11 @@ class InteractiveSearchToolbox {
 
 
     maskControlsPass(event, obj = null) {
+        this.finalPass.uniforms.mouse.value.x = (this.pointer.x + 1) / 2;
+        this.finalPass.uniforms.mouse.value.y = (this.pointer.y + 1) / 2;
+    }
+
+    maskControlsPassOld(event, obj = null) {
         this.finalPass.uniforms.mouse.value.x = event.clientX / window.innerWidth;
         this.finalPass.uniforms.mouse.value.y = 1.0 - (event.clientY / window.innerHeight);
     }
@@ -2543,6 +2569,53 @@ class InteractiveSearchToolbox {
     setupMask(controlSettings) {
         const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
 
+        this.sharpRT = new THREE.WebGLRenderTarget(size.width, size.height, {
+            samples: 4,
+            type: THREE.HalfFloatType
+        });
+
+        this.mainComposer = new EffectComposer(this.renderer);
+        this.mainComposer.addPass(new RenderPass(this.scene, this.camera));
+
+        // Keep references so resize() and setBlurIntensity() can update them later
+        this.blurPasses = [];
+
+        if (controlSettings.maskType === 'blur') {
+            for (let i = 0; i < controlSettings.numberOfBlurPasses; i++) {
+                const hBlurPass = new ShaderPass(HorizontalBlurShader);
+                const vBlurPass = new ShaderPass(VerticalBlurShader);
+
+                hBlurPass.uniforms['h'].value = controlSettings.blurIntensity / size.width;
+                vBlurPass.uniforms['v'].value = controlSettings.blurIntensity / size.height;
+
+                this.mainComposer.addPass(hBlurPass);
+                this.mainComposer.addPass(vBlurPass);
+
+                this.blurPasses.push({ hBlurPass, vBlurPass });
+            }
+        }
+
+        this.finalPass = new ShaderPass(MaskShader);
+        this.finalPass.uniforms.tSharp.value = this.sharpRT.texture;
+
+        let typeInt = 0;
+        if (controlSettings.maskType.toLowerCase() === 'opaque') typeInt = 1;
+        this.finalPass.uniforms.maskType.value = typeInt;
+
+        this.finalPass.uniforms.maskColor.value.set(new THREE.Color(controlSettings.colour));
+        this.finalPass.uniforms.maskAlpha.value = controlSettings.opacity;
+        this.finalPass.uniforms.radius.value = controlSettings.maskRadius;
+
+        // Use actual canvas size, not window size, so it's correct even in a custom container
+        this.finalPass.uniforms.aspect.value = size.width / size.height;
+
+        this.mainComposer.addPass(this.finalPass);
+        this.mainComposer.addPass(new ShaderPass(GammaCorrectionShader));
+    }
+
+    setupMaskOld(controlSettings) {
+        const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+
         // Dedicated render target for the clean scene
         this.sharpRT = new THREE.WebGLRenderTarget(size.width, size.height, {
             samples: 4,
@@ -2594,8 +2667,12 @@ class InteractiveSearchToolbox {
     }
 
 
-    setMaskColour(colour) {
+    setMaskColour(colour, opacity = null) {
         this.finalPass.uniforms.maskColor.value.set(colour) // Set the colour
+        
+        if(opacity){
+            this.finalPass.uniforms.maskAlpha.value = opacity;
+        }
     }
 
     setMaskRadius(size, softness = null) {
@@ -2607,10 +2684,25 @@ class InteractiveSearchToolbox {
     }
 
     setBlurIntensity(amount) {
+    if (this.maskControls) {
+        this.maskControls.blurIntensity = amount;
+
+        if (this.blurPasses && this.blurPasses.length > 0) {
+            const w = this.interactiveCanvas.clientWidth || window.innerWidth;
+            const h = this.interactiveCanvas.clientHeight || window.innerHeight;
+            this.blurPasses.forEach(({ hBlurPass, vBlurPass }) => {
+                hBlurPass.uniforms['h'].value = amount / w;
+                vBlurPass.uniforms['v'].value = amount / h;
+            });
+        }
+    }
+}
+
+    /*setBlurIntensity(amount) {
         if (this.maskControls) {
             this.maskControls.blurIntensity = amount
         }
-    }
+    }*/
 
     disableMaskControls() {
         this.currentControls = null
@@ -2720,12 +2812,12 @@ class InteractiveSearchToolbox {
                 boundingBoxesInScene.push(boundingBox);
                 object.grid_parent = parentObj
                 this.addStimulusToScene(object);
-                parentObj.add(object)
+                //parentObj.add(object)
             }
         }
 
         //this.addStimulusToScene(parentObj);
-        return (parentObj)
+        return (objectsToPlace)
     }
 
     placeRandomly2D(userSettings = null) {
@@ -2964,10 +3056,6 @@ class InteractiveSearchToolbox {
             if (settings.distanceBetweenRings === null) {
                 settings.distanceBetweenRings = (settings.itemWidth * settings.itemHeight) + 1
             }
-
-
-
-
         }
 
         if (settings.startingRadius === null) {
@@ -2979,6 +3067,7 @@ class InteractiveSearchToolbox {
         const ringsUnique = []
         const n = settings.totalRingSections
         const halfStep = (360 / n) / 2
+        const debugGrid = []
 
         for (let j = 0; j < settings.totalRings; j++) {
             const ringPositions = []
@@ -2997,7 +3086,9 @@ class InteractiveSearchToolbox {
                     const material = new THREE.MeshBasicMaterial({ color: 0x117430, wireframe: true });
                     const cube = new THREE.Mesh(geometry, material);
                     cube.position.set(x, y, settings.zPosition)
-                    this.addStimulusToScene(cube)
+                    cube.name = 'debugGrid';
+                    debugGrid.push(cube)
+                    //this.addStimulusToScene(cube)
                 }
 
 
@@ -3020,11 +3111,18 @@ class InteractiveSearchToolbox {
         }
 
         if (settings.addToScene == true) {
+
+            if (settings.showDebugGrid == true) {
+                    debugGrid.forEach(cube => {
+                        this.addStimulusToScene(cube)
+                    });
+                }
+
             if (settings.ringToUse !== null) {
                 const ring = ringsUnique[settings.ringToUse]
 
                 if (objects.length > ring.length) {
-                    this.warningMessage("Not enough spaces for stimuli!")
+                    this.warningMessage("Not enough spaces!" + "\n"+objects.length + " objects provided, only " + ring.length + " slots available!")
                     return
                 }
 
@@ -3045,9 +3143,8 @@ class InteractiveSearchToolbox {
 
             } else {
                 // Place randomly across rings
-
                 if (objects.length > rings.length) {
-                    this.warningMessage("Not enough spaces for stimuli!")
+                    this.warningMessage("Not enough spaces!" + "\n"+objects.length + " objects provided, only " + rings.length + " slots available!")
                     return
                 }
 
@@ -3067,85 +3164,85 @@ class InteractiveSearchToolbox {
 
 
     setupWarningMessage() {
-    // Create overlay container
-    warningBox = document.createElement('div');
-    warningBox.style.display = 'flex';
-    warningBox.style.justifyContent = 'center';
-    warningBox.style.alignItems = 'center';
-    warningBox.style.width = '100vw';
-    warningBox.style.height = '100vh';
-    warningBox.style.position = 'fixed';
-    warningBox.style.top = '0';
-    warningBox.style.left = '0';
-    warningBox.style.backgroundColor = 'rgba(0, 0, 0, 0.55)';
-    warningBox.style.zIndex = '2000';
-    warningBox.style.display = 'none';
-    warningBox.style.backdropFilter = 'blur(6px)';
-
-    // Create the actual warning box
-    warningBoxText = document.createElement('div');
-    warningBoxText.style.backgroundColor = '#1f1f24';
-    warningBoxText.style.color = '#f0c542';
-    warningBoxText.style.border = '1px solid #3a3a42';
-    warningBoxText.style.padding = '16px 24px';
-    warningBoxText.style.borderRadius = '10px';
-    warningBoxText.style.boxShadow = '0 8px 24px rgba(0,0,0,0.5)';
-    warningBoxText.style.display = 'flex';
-    warningBoxText.style.alignItems = 'center';
-    warningBoxText.style.gap = '14px';
-    warningBoxText.style.fontSize = '16px';
-    warningBoxText.style.flexDirection = 'column';
-
-    // Create text element (this is what you'll update later)
-    warningMessageText = document.createElement('span');
-    warningMessageText.style.whiteSpace = 'pre-line';
-    warningMessageText.style.textAlign = 'center';
-    warningMessageText.style.color = '#e8e8ea';
-
-    // Add close button
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Close';
-    closeBtn.style.backgroundColor = '#f0c542';
-    closeBtn.style.color = '#1f1f24';
-    closeBtn.style.border = 'none';
-    closeBtn.style.borderRadius = '6px';
-    closeBtn.style.padding = '6px 16px';
-    closeBtn.style.fontSize = '16px';
-    closeBtn.style.fontWeight = '600';
-    closeBtn.style.cursor = 'pointer';
-    closeBtn.style.transition = 'background-color 0.2s ease, transform 0.1s ease';
-
-    // Optional hover/focus effects
-    closeBtn.addEventListener('mouseenter', () => {
-        closeBtn.style.backgroundColor = '#ffd766';
-    });
-    closeBtn.addEventListener('mouseleave', () => {
-        closeBtn.style.backgroundColor = '#f0c542';
-    });
-    closeBtn.addEventListener('mousedown', () => {
-        closeBtn.style.transform = 'scale(0.95)';
-    });
-    closeBtn.addEventListener('mouseup', () => {
-        closeBtn.style.transform = 'scale(1)';
-    });
-    closeBtn.addEventListener('focus', () => {
-        closeBtn.style.outline = '2px solid #ffd766';
-    });
-    closeBtn.addEventListener('blur', () => {
-        closeBtn.style.outline = 'none';
-    });
-
-    // Close button functionality
-    closeBtn.addEventListener('click', () => {
+        // Create overlay container
+        warningBox = document.createElement('div');
+        warningBox.style.display = 'flex';
+        warningBox.style.justifyContent = 'center';
+        warningBox.style.alignItems = 'center';
+        warningBox.style.width = '100vw';
+        warningBox.style.height = '100vh';
+        warningBox.style.position = 'fixed';
+        warningBox.style.top = '0';
+        warningBox.style.left = '0';
+        warningBox.style.backgroundColor = 'rgba(0, 0, 0, 0.55)';
+        warningBox.style.zIndex = '2000';
         warningBox.style.display = 'none';
-    });
+        warningBox.style.backdropFilter = 'blur(6px)';
 
-    // Put everything together
-    warningBoxText.appendChild(warningMessageText);
-    warningBoxText.appendChild(closeBtn);
-    warningBox.appendChild(warningBoxText);
-    document.body.appendChild(warningBox);
-}
+        // Create the actual warning box
+        warningBoxText = document.createElement('div');
+        warningBoxText.style.backgroundColor = '#1f1f24';
+        warningBoxText.style.color = '#f0c542';
+        warningBoxText.style.border = '1px solid #3a3a42';
+        warningBoxText.style.padding = '16px 24px';
+        warningBoxText.style.borderRadius = '10px';
+        warningBoxText.style.boxShadow = '0 8px 24px rgba(0,0,0,0.5)';
+        warningBoxText.style.display = 'flex';
+        warningBoxText.style.alignItems = 'center';
+        warningBoxText.style.gap = '14px';
+        warningBoxText.style.fontSize = '16px';
+        warningBoxText.style.flexDirection = 'column';
+
+        // Create text element (this is what you'll update later)
+        warningMessageText = document.createElement('span');
+        warningMessageText.style.whiteSpace = 'pre-line';
+        warningMessageText.style.textAlign = 'center';
+        warningMessageText.style.color = '#e8e8ea';
+
+        // Add close button
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Close';
+        closeBtn.style.backgroundColor = '#f0c542';
+        closeBtn.style.color = '#1f1f24';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '6px';
+        closeBtn.style.padding = '6px 16px';
+        closeBtn.style.fontSize = '16px';
+        closeBtn.style.fontWeight = '600';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.transition = 'background-color 0.2s ease, transform 0.1s ease';
+
+        // Optional hover/focus effects
+        closeBtn.addEventListener('mouseenter', () => {
+            closeBtn.style.backgroundColor = '#ffd766';
+        });
+        closeBtn.addEventListener('mouseleave', () => {
+            closeBtn.style.backgroundColor = '#f0c542';
+        });
+        closeBtn.addEventListener('mousedown', () => {
+            closeBtn.style.transform = 'scale(0.95)';
+        });
+        closeBtn.addEventListener('mouseup', () => {
+            closeBtn.style.transform = 'scale(1)';
+        });
+        closeBtn.addEventListener('focus', () => {
+            closeBtn.style.outline = '2px solid #ffd766';
+        });
+        closeBtn.addEventListener('blur', () => {
+            closeBtn.style.outline = 'none';
+        });
+
+        // Close button functionality
+        closeBtn.addEventListener('click', () => {
+            warningBox.style.display = 'none';
+        });
+
+        // Put everything together
+        warningBoxText.appendChild(warningMessageText);
+        warningBoxText.appendChild(closeBtn);
+        warningBox.appendChild(warningBoxText);
+        document.body.appendChild(warningBox);
+    }
 
     warningMessage(textToDisplay) {
         warningMessageText.textContent = textToDisplay;
@@ -3177,20 +3274,20 @@ class InteractiveSearchToolbox {
         }
     }*/
 
-        /*
-    setMaskColourOld(hexColour = null) {
-        if (hexColour == null) {
-            console.warn('Please provide a hex string')
-            return
-        } else {
-            const colour = new THREE.Color().setHex(hexColour);
-            if (colour.isColor) {
-                //this.finalPass.uniforms.maskColor.value.set(colour) 
-                //this.maskPlane.material.color = colour
-            }
+    /*
+setMaskColourOld(hexColour = null) {
+    if (hexColour == null) {
+        console.warn('Please provide a hex string')
+        return
+    } else {
+        const colour = new THREE.Color().setHex(hexColour);
+        if (colour.isColor) {
+            //this.finalPass.uniforms.maskColor.value.set(colour) 
+            //this.maskPlane.material.color = colour
         }
     }
-        */
+}
+    */
     setOverallDragToRotateSensitivity(value) {
         if (!isNaN(value)) {
             this.dragToRotateSensitivity = value
