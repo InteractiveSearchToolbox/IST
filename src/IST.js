@@ -273,7 +273,7 @@ class InteractiveSearchToolbox {
     }
 
     async loadThree() {
-        const threeVersion = globalSettings.threeVersion || "latest"
+        const threeVersion = globalSettings.threeJSVersion || "latest"
 
         const importMap = document.createElement('script')
         importMap.type = 'importmap'
@@ -1560,6 +1560,7 @@ class InteractiveSearchToolbox {
             autoSize: true,
             jitter: 0,
             cameraAxis: 'Z',
+            randomPlacement: true,
             randomRotation: true,
             randomRotateX: false,
             randomRotateY: false,
@@ -1595,7 +1596,9 @@ class InteractiveSearchToolbox {
         }
 
         // Randomise grid positions
-        settings.gridObject.positions = _.shuffle(settings.gridObject.positions)
+        if (settings.randomPlacement) {
+            settings.gridObject.positions = _.shuffle(settings.gridObject.positions)
+        }
 
         objectsToPlace.forEach(object => {
             if (settings.randomRotateX) {
@@ -1615,18 +1618,13 @@ class InteractiveSearchToolbox {
             object.position.set(pos.x, pos.y, pos.z)
             settings.gridObject.nextEmptyPosition++
 
-            //object.grid_parent = parentObj;
-
             this.addStimulusToScene(object)
-            //parentObj.add(object)
         });
 
         if (settings.showDebugGrid == true) {
             this.scene.add(settings.gridObject.debugGrid)
         }
 
-        //parentObj.add(settings.gridObject.debugGrid)
-        //this.addStimulusToScene(parentObj);
         return (settings.gridObject)
     }
 
@@ -1664,179 +1662,34 @@ class InteractiveSearchToolbox {
             return
         }
 
-
         if (settings.randomPlacement) {
             gridObject.positions = _.shuffle(gridObject.positions)
-            objectsToPlace.forEach(object => {
-                if (settings.randomRotateX) {
-                    object.rotation.x = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateY) {
-                    object.rotation.y = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateZ) {
-                    object.rotation.z = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotation) {
-                    object.rotation.set(_.random(0, 6.4, true), _.random(0, 6.4, true), _.random(0, 6.4, true));
-                }
-
-                let pos = gridObject.positions[gridObject.nextEmptyPosition]
-                object.position.set(pos.x, pos.y, pos.z)
-                gridObject.nextEmptyPosition++
-
-                object.grid_parent = parentObj
-
-                this.addStimulusToScene(object)
-                parentObj.add(object)
-            });
-        }
-        if (settings.leftToRightTop) {
-            // Row 1, col 1
-            objectsToPlace.forEach(object => {
-                if (settings.randomRotateX) {
-                    object.rotation.x = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateY) {
-                    object.rotation.y = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateZ) {
-                    object.rotation.z = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotation) {
-                    object.rotation.set(_.random(0, 6.4, true), _.random(0, 6.4, true), _.random(0, 6.4, true));
-                }
-
-                object.position.set(gridObject.positions[gridObject.nextEmptyPosition].x, gridObject.positions[gridObject.nextEmptyPosition].y, gridObject.positions[gridObject.nextEmptyPosition].z)
-                gridObject.nextEmptyPosition++
-                object.grid_parent = parentObj
-
-                this.addStimulusToScene(object)
-                parentObj.add(object)
-            });
-        }
-        if (settings.rightToLeftTop) {
-            objectsToPlace.forEach(object => {
-                if (settings.randomRotateX) {
-                    object.rotation.x = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateY) {
-                    object.rotation.y = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateZ) {
-                    object.rotation.z = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotation) {
-                    object.rotation.set(_.random(0, 6.4, true), _.random(0, 6.4, true), _.random(0, 6.4, true));
-                }
-
-                // Determine current row and column
-                let cols = gridObject.columns;
-                let row = Math.floor(gridObject.nextEmptyPosition / cols);
-                let col = gridObject.nextEmptyPosition % cols;
-
-                // Flip column to go right -> left
-                let flippedCol = cols - 1 - col;
-
-                // Compute the flat array index
-                let index = row * cols + flippedCol;
-
-                // Place the object
-                object.position.set(
-                    gridObject.positions[index].x,
-                    gridObject.positions[index].y,
-                    gridObject.positions[index].z
-                );
-                gridObject.nextEmptyPosition++
-
-                object.grid_parent = parentObj
-                this.addStimulusToScene(object)
-                parentObj.add(object)
-            });
-
-
-        }
-        if (settings.leftToRightBottom) {
-            let rows = gridObject.rows;
-            let cols = gridObject.columns;
-
-            objectsToPlace.forEach(object => {
-                if (settings.randomRotateX) {
-                    object.rotation.x = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateY) {
-                    object.rotation.y = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateZ) {
-                    object.rotation.z = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotation) {
-                    object.rotation.set(_.random(0, 6.4, true), _.random(0, 6.4, true), _.random(0, 6.4, true));
-                }
-
-                // Row counting from bottom
-                let row = rows - 1 - Math.floor(gridObject.nextEmptyPosition / cols);
-
-                // Column left -> right
-                let col = gridObject.nextEmptyPosition % cols;
-
-                // Compute index in flat array
-                let index = row * cols + col;
-
-                // Place object
-                object.position.set(
-                    gridObject.positions[index].x,
-                    gridObject.positions[index].y,
-                    gridObject.positions[index].z
-                );
-
-                gridObject.nextEmptyPosition++
-                this.addStimulusToScene(object)
-                parentObj.add(object)
-            });
-
         }
 
-        if (settings.rightToLeftBottom) {
-            let rows = gridObject.rows;
-            let cols = gridObject.columns;
+        objectsToPlace.forEach(object => {
+            if (settings.randomRotateX) {
+                object.rotation.x = _.random(0, 6.4, true);
+            }
+            if (settings.randomRotateY) {
+                object.rotation.y = _.random(0, 6.4, true);
+            }
+            if (settings.randomRotateZ) {
+                object.rotation.z = _.random(0, 6.4, true);
+            }
+            if (settings.randomRotation) {
+                object.rotation.set(_.random(0, 6.4, true), _.random(0, 6.4, true), _.random(0, 6.4, true));
+            }
 
-            objectsToPlace.forEach(object => {
-                if (settings.randomRotateX) {
-                    object.rotation.x = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateY) {
-                    object.rotation.y = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotateZ) {
-                    object.rotation.z = _.random(0, 6.4, true);
-                }
-                if (settings.randomRotation) {
-                    object.rotation.set(_.random(0, 6.4, true), _.random(0, 6.4, true), _.random(0, 6.4, true));
-                }
-                // Current row, counting from bottom
-                let row = rows - 1 - Math.floor(gridObject.nextEmptyPosition / cols);
+            let pos = gridObject.positions[gridObject.nextEmptyPosition]
+            object.position.set(pos.x, pos.y, pos.z)
+            gridObject.nextEmptyPosition++
 
-                // Current column, right -> left
-                let col = cols - 1 - (gridObject.nextEmptyPosition % cols);
+            object.grid_parent = parentObj
 
-                // Compute flat array index
-                let index = row * cols + col;
+            this.addStimulusToScene(object)
+            parentObj.add(object)
+        });
 
-                // Place object
-                object.position.set(
-                    gridObject.positions[index].x,
-                    gridObject.positions[index].y,
-                    gridObject.positions[index].z
-                );
-
-                gridObject.nextEmptyPosition++
-                //object.grid_parent = parentObj
-
-                this.addStimulusToScene(object)
-                //parentObj.add(object)
-            });
-        }
 
         //parentObj.add(gridObject.debugGrid)
         //this.addStimulusToScene(parentObj);
@@ -2669,8 +2522,8 @@ class InteractiveSearchToolbox {
 
     setMaskColour(colour, opacity = null) {
         this.finalPass.uniforms.maskColor.value.set(colour) // Set the colour
-        
-        if(opacity){
+
+        if (opacity) {
             this.finalPass.uniforms.maskAlpha.value = opacity;
         }
     }
@@ -2684,19 +2537,19 @@ class InteractiveSearchToolbox {
     }
 
     setBlurIntensity(amount) {
-    if (this.maskControls) {
-        this.maskControls.blurIntensity = amount;
+        if (this.maskControls) {
+            this.maskControls.blurIntensity = amount;
 
-        if (this.blurPasses && this.blurPasses.length > 0) {
-            const w = this.interactiveCanvas.clientWidth || window.innerWidth;
-            const h = this.interactiveCanvas.clientHeight || window.innerHeight;
-            this.blurPasses.forEach(({ hBlurPass, vBlurPass }) => {
-                hBlurPass.uniforms['h'].value = amount / w;
-                vBlurPass.uniforms['v'].value = amount / h;
-            });
+            if (this.blurPasses && this.blurPasses.length > 0) {
+                const w = this.interactiveCanvas.clientWidth || window.innerWidth;
+                const h = this.interactiveCanvas.clientHeight || window.innerHeight;
+                this.blurPasses.forEach(({ hBlurPass, vBlurPass }) => {
+                    hBlurPass.uniforms['h'].value = amount / w;
+                    vBlurPass.uniforms['v'].value = amount / h;
+                });
+            }
         }
     }
-}
 
     /*setBlurIntensity(amount) {
         if (this.maskControls) {
@@ -2834,11 +2687,6 @@ class InteractiveSearchToolbox {
             this.setValues(settings, userSettings)
         }
 
-        if (this.stimuliInScene.length > 0) {
-            this.stimuliInScene.forEach(object => {
-                this.removeStimulusFromScene(object)
-            });
-        }
 
         let axisOrder = settings.axisOrder
 
@@ -3113,16 +2961,16 @@ class InteractiveSearchToolbox {
         if (settings.addToScene == true) {
 
             if (settings.showDebugGrid == true) {
-                    debugGrid.forEach(cube => {
-                        this.addStimulusToScene(cube)
-                    });
-                }
+                debugGrid.forEach(cube => {
+                    this.addStimulusToScene(cube)
+                });
+            }
 
             if (settings.ringToUse !== null) {
                 const ring = ringsUnique[settings.ringToUse]
 
                 if (objects.length > ring.length) {
-                    this.warningMessage("Not enough spaces!" + "\n"+objects.length + " objects provided, only " + ring.length + " slots available!")
+                    this.warningMessage("Not enough spaces!" + "\n" + objects.length + " objects provided, only " + ring.length + " slots available!")
                     return
                 }
 
@@ -3144,7 +2992,7 @@ class InteractiveSearchToolbox {
             } else {
                 // Place randomly across rings
                 if (objects.length > rings.length) {
-                    this.warningMessage("Not enough spaces!" + "\n"+objects.length + " objects provided, only " + rings.length + " slots available!")
+                    this.warningMessage("Not enough spaces!" + "\n" + objects.length + " objects provided, only " + rings.length + " slots available!")
                     return
                 }
 
