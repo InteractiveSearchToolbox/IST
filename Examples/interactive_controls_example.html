@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Search Toolbox</title>
-    <script src="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST@v1.0.1/build/IST.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/gh/InteractiveSearchToolbox/IST@v1.0.1/build/IST.min.css" rel="stylesheet"
-        type="text/css" />
+    <script src="../build/IST.min.js"></script>
 </head>
 
 <body>
@@ -15,7 +13,10 @@
 
         const IST = new InteractiveSearchToolbox()
 
+        await IST.init()
+
         IST.turnOnLoadingScreen("Loading, please wait...");
+        
         const modelsToLoad = ['Models/L.glb', 'Models/T.glb', 'Models/TARGET_CUBE.glb', 'Models/Brick.glb', 'Models/HelloWorld.glb']
 
         IST.preLoadModels(modelsToLoad)
@@ -33,6 +34,7 @@
                 let cubeObject = IST.findLoadedObject('TARGET_CUBE')
                 cubeObject.scale.set(0.5, 0.5, 0.5)
                 cubeObject.position.set(-3.5, 3, 0)
+                cubeObject.name = 'HIGH';
                 IST.addStimulusToScene(cubeObject);
 
                 let L_Object = IST.findLoadedObject('L')
@@ -55,13 +57,19 @@
                 // Enable the type of interaction controls you want
 
                 // Drag to rotate
-                IST.enableDragToRotateControls();
+                //IST.enableDragToRotateControls();
 
                 // Orbit 
                 //IST.enableOrbitControls();
 
                 // Drag
-                //IST.enableDragControls(); 
+                IST.enableDragControls({
+                    varySensitivity: true,
+                    sensitivityFlags: {
+                        "HIGH": 10, // Any objects that have the text HIGH in their name will have a reduced sensitivity of 34% (relative to the overall sensitivity)
+                        "LOW": 100
+                    }
+                }); 
 
                 // Mask
                 //IST.enableMaskControls({maskType:'opaque'}) // Opaque mask
@@ -80,7 +88,7 @@
 
             // Instruction trial is where we would provide instructions on how to complete the experiment.
             const INSTRUCTION_TRIAL = {
-                type: htmlButtonResponse,
+                type: jsPsychHtmlButtonResponse,
                 on_start() {
                 },
                 stimulus: `
@@ -93,7 +101,7 @@
             }
 
             const SEARCH_TRIAL = {
-                type: htmlKeyboardResponse,
+                type: jsPsychHtmlKeyboardResponse,
                 on_start() {
                     setupTrial(); // Gets all the stimuli adds them to the scene and enables choice of controls
                     IST.startTrial(); // We call this to start the trial - This is extremely important.

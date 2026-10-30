@@ -113,7 +113,7 @@ class InteractiveSearchToolbox {
             responsiveDisplaySize: true,
             enableHDRI: false,
             autoHideCanvas: true,
-            threeJSVersion: "latest",
+            threeJSVersion: "0.187.0",
             threeAddons: [],
             jsPsychVersion: "",
             jsPychPlugins: [],
@@ -164,7 +164,11 @@ class InteractiveSearchToolbox {
 
         this.firstPersonMouseSensitivity = 0.2;
         this.dragToRotateSensitivity = 200
+        this.dragSensitivity = 100
+        this.deltaTimer = 0;
+        this.dragReset = true;
         this.sensitivityFlags = []
+        this.dragSensitivityFlags = []
 
         this.blurSettings = {
             intensity: 1.5 // 1.0 is standard, 0.0 is no blur, 5.0+ is very heavy
@@ -273,7 +277,7 @@ class InteractiveSearchToolbox {
     }
 
     async loadThree() {
-        const threeVersion = globalSettings.threeJSVersion || "latest"
+        const threeVersion = globalSettings.threeJSVersion || "0.187.0"
 
         const importMap = document.createElement('script')
         importMap.type = 'importmap'
@@ -783,6 +787,8 @@ class InteractiveSearchToolbox {
             this.pointerUp = true;
             this.pointerDown = false;
 
+            this.dragReset = true;
+
             this._pointerUpCallback?.(event);
         });
 
@@ -1039,17 +1045,53 @@ class InteractiveSearchToolbox {
     dragControls(event, obj = null) {
         if (obj != null) {
             if (this.pointerDown) {
+
+
+
                 // Get the object's world position
                 obj.getWorldPosition(worldPos);
-
                 let pos = this.mouseToWorld(worldPos);
-
                 obj.parent.worldToLocal(pos);
-                obj.position.copy(pos);
+
+
+                if (this.dragSensitivityFlags.length > 0) {
+                    if (this.dragReset) {
+                        this.deltaTimer = 0;
+                        this.dragReset = false;
+                    }
+
+                    for (let i = 0; i < this.dragSensitivityFlags.length; i++) {
+                        if (obj.name.includes(this.dragSensitivityFlags[i][0])) {
+                            let sensitivity = 1 * (clamp(this.dragSensitivityFlags[i][1], 0, 100)) / 1000
+                            
+                            pos.lerpVectors(obj.position, pos, sensitivity)
+
+                             if (this.deltaTimer < 0.5) {
+                                    obj.position.copy(pos);
+                                }
+                            break;
+                        }else{
+                            obj.position.copy(pos);
+                        }
+                    }
+
+                } else {
+                    obj.position.copy(pos);
+                }
+
+
+
+
+
+
+                //obj.position.lerp(pos, sensitivity);
+
+
                 worldPos.set(0, 0, 0)
             }
         }
     }
+
 
     // Drag to rotate controls rotate objects with mouse movements
     // Click and drag to the left to rotate to the left etc.
@@ -1931,12 +1973,14 @@ class InteractiveSearchToolbox {
         }
 
 
+
         this.collectData();
 
         this._updateCallback?.();
         //this.update() // Process loop - user can put their own code here
 
         this.delta = this.timer.getDelta();
+        this.deltaTimer += this.delta;
         this.experimentClock.tick()
 
         if (this.checkStats) { this.stats.update(); }
@@ -2303,11 +2347,41 @@ class InteractiveSearchToolbox {
         this.currentControls = null
     }
 
-    enableDragControls() {
+    enableDragControls(userSettings = null) {
         this.disableOrbitControls()
         this.disableDragToRotateControls()
         this.disableMaskControls()
         this.disableFirstPersonControls()
+
+        // Default settings
+        let settings = {
+            overallSensitivity: this.dragSensitivity,
+            varySensitivity: false,
+            sensitivityFlags: null
+        };
+
+        // If new parameters have been provided, set them.
+        if (userSettings != null) {
+            this.setValues(settings, userSettings)
+
+            if (settings.overallSensitivity != this.dragSensitivity) {
+                this.dragSensitivity = settings.overallSensitivity;
+            }
+        }
+
+        if (settings.varySensitivity) {
+            if (settings.sensitivityFlags != null) {
+                this.dragSensitivityFlags = []
+
+                // For each key value pair in sensitivity flags,
+                Object.keys(settings.sensitivityFlags).forEach((key) => {
+                    let flag_string = key;
+                    let sensitivityVal = settings.sensitivityFlags[key];
+                    this.dragSensitivityFlags.push([flag_string, sensitivityVal]);
+                });
+            }
+        }
+
 
         xAxis.set(1, 0, 0)
         yAxis.set(0, 1, 0)
